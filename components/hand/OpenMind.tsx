@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 
 /**
@@ -65,6 +65,7 @@ export default function OpenMind({
   color,
   ready,
   hide,
+  silhouette,
 }: {
   host: React.RefObject<HTMLElement | null>;
   /** The painting, for the lid. */
@@ -73,10 +74,13 @@ export default function OpenMind({
   ready: boolean;
   /** Things to tuck away while the head is open (they sit where the thoughts go). */
   hide?: React.RefObject<HTMLElement | null>[];
+  /** The head's outline (the traced silhouette), so the opening follows it. */
+  silhouette: string;
 }) {
+  const uid = useId().replace(/:/g, "");
   const root = useRef<HTMLDivElement>(null);
   const lid = useRef<HTMLDivElement>(null);
-  const hole = useRef<HTMLDivElement>(null);
+  const hole = useRef<SVGSVGElement>(null);
   const rim = useRef<SVGSVGElement>(null);
   const train = useRef<SVGPathElement>(null);
   const tip = useRef<SVGCircleElement>(null);
@@ -86,17 +90,9 @@ export default function OpenMind({
   // is running, so they're applied here rather than rendered on the server
   // (where they tripped React's hydration check).
   useEffect(() => {
-    Object.assign(hole.current!.style, {
-      clipPath: LID,
-      background: `radial-gradient(38% 16% at ${px(MOUTH[0])} ${py(MOUTH[1] + 30)}, #5b68ff 0%, #2433c9 30%, #121a5a 62%, #070b24 100%)`,
-      maskImage: `url(${color})`,
-      webkitMaskImage: `url(${color})`,
-      maskSize: "100% 100%",
-      webkitMaskSize: "100% 100%",
-    });
     lidClip.current!.style.clipPath = LID;
     lid.current!.style.transformOrigin = PIVOT;
-  }, [color]);
+  }, []);
 
   useEffect(() => {
     const el = host.current;
@@ -141,10 +137,13 @@ export default function OpenMind({
       const along = spots.map((sp) => {
         let best = 0,
           bd = Infinity;
-        for (let k = 0; k <= 200; k++) {
-          const q = path.getPointAtLength((k / 200) * L);
+        for (let k = 0; k <= 48; k++) {
+          const q = path.getPointAtLength((k / 48) * L);
           const d = (q.x - sp.x) ** 2 + (q.y - sp.y) ** 2;
-          if (d < bd) ((bd = d), (best = k / 200));
+          if (d < bd) {
+            bd = d;
+            best = k / 48;
+          }
         }
         return best;
       });
@@ -184,8 +183,7 @@ export default function OpenMind({
     const show = () => {
       window.clearTimeout(timer);
       if (open) return;
-      // measure fresh each time it opens from shut (scrolling and parallax move things)
-      if (!tl || tl.progress() === 0) build();
+      if (!tl) build();
       open = true;
       ui.dataset.open = "true";
       tl!.timeScale(1).play();
@@ -206,8 +204,31 @@ export default function OpenMind({
       el.addEventListener("pointerenter", show);
       el.addEventListener("pointerleave", later);
     } else el.addEventListener("click", toggle);
+
+    // All the measuring and planning happens here, while the page is idle,
+    // never when the pointer arrives. Positions are relative to the portrait,
+    // so scrolling and parallax don't invalidate them; only a resize does.
+    lid
+      .current!.querySelector("img")
+      ?.decode?.()
+      .catch(() => {});
+    const idle = window.requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 200));
+    idle(() => {
+      if (!open) build();
+    });
+    let resizeTimer = 0;
+    const onResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (!open) build();
+      }, 250);
+    };
+    window.addEventListener("resize", onResize);
+
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", onResize);
       el.removeEventListener("pointerenter", show);
       el.removeEventListener("pointerleave", later);
       el.removeEventListener("click", toggle);
@@ -218,7 +239,37 @@ export default function OpenMind({
   return (
     <div ref={root} data-open="false" className="om absolute inset-0 z-10 [container-type:inline-size]">
       {/* inside the head, where the lid was: dark, with a light on */}
-      <div ref={hole} aria-hidden className="pointer-events-none invisible absolute inset-0 opacity-0" />
+      <svg
+        ref={hole}
+        aria-hidden
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="pointer-events-none invisible absolute inset-0 h-full w-full opacity-0"
+      >
+        <defs>
+          <clipPath id={`om-head-${uid}`}>
+            <path d={silhouette} />
+          </clipPath>
+          <radialGradient id={`om-in-${uid}`} gradientUnits="userSpaceOnUse" cx={MOUTH[0]} cy={MOUTH[1] + 30} r="150">
+            <stop offset="0" stopColor="#5b68ff" />
+            <stop offset="0.3" stopColor="#2433c9" />
+            <stop offset="0.62" stopColor="#121a5a" />
+            <stop offset="1" stopColor="#070b24" />
+          </radialGradient>
+        </defs>
+        <path
+          d="M98 114 C 190 90, 340 120, 405 212 L 470 212 L 470 -60 L 30 -60 L 30 114 Z"
+          fill={`url(#om-in-${uid})`}
+          clipPath={`url(#om-head-${uid})`}
+        />
+        <path
+          d="M98 114 C 190 90, 340 120, 405 212"
+          fill="none"
+          stroke="#0b1238"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+        />
+      </svg>
 
       {/* the opening, drawn in pen, and the train of thought coming out of it */}
       <svg
@@ -228,13 +279,6 @@ export default function OpenMind({
         preserveAspectRatio="none"
         className="pointer-events-none invisible absolute inset-0 h-full w-full overflow-visible opacity-0"
       >
-        <path
-          d="M98 114 C 190 90, 340 120, 405 212"
-          fill="none"
-          stroke="#0b1238"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-        />
         <path
           ref={train}
           d={WIDE_TRAIN}
@@ -254,7 +298,7 @@ export default function OpenMind({
       <div
         ref={lid}
         aria-hidden
-        className="pointer-events-none invisible absolute inset-0 opacity-0 drop-shadow-[0_10px_10px_rgba(11,18,56,0.28)]"
+        className="pointer-events-none invisible absolute inset-0 opacity-0 will-change-transform"
       >
         <div ref={lidClip} className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -378,7 +422,7 @@ export default function OpenMind({
 
 function Thought({ n, children }: { i: number; n: string; children: React.ReactNode }) {
   return (
-    <div className="om-thought invisible absolute opacity-0">
+    <div className="om-thought pointer-events-none invisible absolute opacity-0 will-change-transform">
       <span className="font-hand absolute -left-[12%] -top-[14%] text-[5cqw] leading-none text-field">{n}</span>
       {children}
     </div>

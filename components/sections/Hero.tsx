@@ -133,7 +133,13 @@ export default function Hero() {
             unwashOn={root}
             className="h-full w-full"
           />
-          <OpenMind host={figure} color="/portraits/hero-color.webp" ready={ready} hide={[note, tapNote, stamp]} />
+          <OpenMind
+            host={figure}
+            color="/portraits/hero-color.webp"
+            ready={ready}
+            hide={[note, tapNote, stamp]}
+            silhouette={heroSketch.paths.find((p) => p.k === 0)!.d}
+          />
 
           {/* what it is, and what to do with it */}
           <div

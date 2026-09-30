@@ -18,7 +18,7 @@ It deploys to Vercel as-is: import the repo, no settings needed. Once the domain
 - **Next.js 15** (App Router, one static page), **React 19**, **TypeScript**, **Tailwind CSS 4**
 - **GSAP 3** with ScrollTrigger and SplitText for scroll-linked and text animation
 - **Lenis** for smooth scrolling on desktop, driven from GSAP's ticker. Touch screens keep native scrolling.
-- **three.js** for the portrait shader, loaded only when a portrait is about a screen away
+- **Kalam** for everything written by hand; pen marks are hand-authored SVG paths drawn with stroke-dashoffset (`components/hand/Marks.tsx`)
 
 ## Palettes
 
@@ -53,8 +53,8 @@ On top of all three, a lens follows the pointer and shows the original colours. 
 
 ## Sections
 
-- **Hero.** The painting as a field of particles (`components/ParticlePortrait.tsx`). The points assemble from a scattered cloud on load, part around the cursor and show their true colour there, ripple outward on click, and drift apart like dust as you scroll. A role line decodes through what I design.
-- **About.** A pinned, scroll-driven story in three chapters: Design, Code and Human. Each chapter swaps a giant outlined word, the copy, and the way the portrait is drawn (palette tone, a grid of code characters, the original painting). It snaps to the nearest chapter, and the rail on the right jumps between them.
+- **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. The painted portrait is taped on as a print and leans toward the pointer, and an "Available for work" stamp lands. Visitors can draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
+- **About.** A desk of real objects you can pick up and move: the photo, an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones it's a tidy stack that scrolls normally.
 - **Work.** Lumen and Atlas, with titles that roll letter by letter on hover (transform-only). Every project opens its own case study with a page transition in that project's colour.
 - **Case studies** (`/work/lumen`, `/work/atlas`):
   - the brief and approach

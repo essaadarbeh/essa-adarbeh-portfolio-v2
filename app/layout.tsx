@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Anybody, Onest } from "next/font/google";
+import { Anybody, Kalam, Onest } from "next/font/google";
 import "./globals.css";
 import { site } from "@/data/site";
 import { paletteCss, palettes, PALETTE_STORAGE_KEY } from "@/lib/palettes";
@@ -12,6 +12,14 @@ const anybody = Anybody({
   subsets: ["latin"],
   variable: "--font-anybody",
   axes: ["wdth"],
+  display: "swap",
+});
+
+// The pen: margin notes, captions and anything "written by hand".
+const kalam = Kalam({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-kalam",
   display: "swap",
 });
 
@@ -45,7 +53,7 @@ const bootScript = `(function(){var d=document.documentElement;try{if(!${site.fe
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${anybody.variable} ${onest.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${anybody.variable} ${onest.variable} ${kalam.variable}`} suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: paletteCss() }} />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />

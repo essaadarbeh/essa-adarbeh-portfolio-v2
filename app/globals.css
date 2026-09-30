@@ -120,25 +120,6 @@ html.js:not([data-intro="done"]) [data-intro-hide] {
   mix-blend-mode: normal;
 }
 
-/* Portrait fallback image: visible without JS; with JS it waits for WebGL
-   and only returns if WebGL fails (data-fallback). */
-html.js .portrait-fallback {
-  opacity: 0;
-}
-html.js .portrait[data-fallback] .portrait-fallback {
-  opacity: 1;
-}
-
-/* About: the portrait stands in a pool of the field colour. */
-.about-stage {
-  background: radial-gradient(
-    90% 70% at 50% 30%,
-    var(--color-field) 0%,
-    color-mix(in oklab, var(--color-field) 35%, var(--color-ink)) 48%,
-    var(--color-ink) 100%
-  );
-}
-
 /* Decoded text renders into an aria-hidden span from JS; without JS the
    screen-reader copy is shown instead. */
 html:not(.js) .decode-source {
@@ -320,42 +301,6 @@ html:not(.js) .decode-source {
   }
 }
 
-/* ── About story ─────────────────────────────────────────────────────── */
-.about-word {
-  color: transparent;
-  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--color-chalk) 16%, transparent);
-  --wdth: 125;
-  transition:
-    transform 1s var(--ease-out-expo),
-    opacity 0.7s ease;
-}
-.about-word[data-state="past"] {
-  opacity: 0;
-  transform: translateY(-35%) scale(0.92);
-}
-.about-word[data-state="next"] {
-  opacity: 0;
-  transform: translateY(35%) scale(0.92);
-}
-.about-copy {
-  transition:
-    transform 0.8s var(--ease-out-expo),
-    opacity 0.45s ease;
-}
-.about-copy[data-state="past"] {
-  opacity: 0;
-  transform: translateY(-24px);
-  pointer-events: none;
-}
-.about-copy[data-state="next"] {
-  opacity: 0;
-  transform: translateY(24px);
-  pointer-events: none;
-}
-.about-glow {
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-field) 55%, transparent), transparent);
-}
-
 /* ── Process story ───────────────────────────────────────────────────── */
 .stage-layer {
   transition:
@@ -440,4 +385,206 @@ html:not(.js) .decode-source {
 }
 [data-layer="on"] .polish-card {
   transform: none;
+}
+
+/* ── Hand-made layer ─────────────────────────────────────────────────────
+   Pen marks, handwriting, tape, stamps and paper. Everything waits for its
+   DrawScope to switch on (data-draw="on"), then draws at a human pace.
+   Without JS, or with reduced motion, it's all simply there. */
+.font-hand {
+  font-family: var(--font-kalam), "Segoe Print", "Bradley Hand", cursive;
+}
+.ink-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+html.js [data-draw="off"] .ink-path {
+  stroke-dashoffset: 1;
+}
+html.js [data-draw="on"] .ink-path {
+  transition: stroke-dashoffset var(--dur, 0.7s) cubic-bezier(0.55, 0.08, 0.3, 1) var(--delay, 0s);
+}
+.written {
+  display: inline-block;
+}
+html.js [data-draw="off"] .written {
+  clip-path: inset(-10% 100% -20% 0);
+}
+html.js [data-draw="on"] .written {
+  clip-path: inset(-10% -2% -20% 0);
+  transition: clip-path var(--dur, 0.8s) linear var(--delay, 0s);
+}
+
+.tape {
+  position: absolute;
+  width: 92px;
+  height: 26px;
+  background: color-mix(in oklab, #f3e7b4 78%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  transform: rotate(var(--r, 0deg));
+  /* torn ends */
+  clip-path: polygon(3% 8%, 0 30%, 4% 52%, 0 74%, 3% 100%, 97% 94%, 100% 70%, 96% 48%, 100% 24%, 96% 0);
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+/* Notebook paper: a quiet dot grid plus a little grain, both static. */
+.paper {
+  background-color: var(--color-chalk);
+  background-image:
+    radial-gradient(color-mix(in oklab, var(--color-ink) 16%, transparent) 1px, transparent 1.2px),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size:
+    26px 26px,
+    220px 220px;
+}
+
+/* Rubber stamp: uneven ink via a noise mask, lands with a thump. */
+.stamp {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.4 1.9'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mask-size: 300px 300px;
+}
+html.js [data-draw="off"] .stamp {
+  opacity: 0;
+  transform: rotate(var(--r)) scale(1.6);
+}
+html.js [data-draw="on"] .stamp {
+  animation: stamp-down 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) var(--delay, 0s) both;
+}
+@keyframes stamp-down {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--r)) scale(1.6);
+  }
+  60% {
+    opacity: 0.92;
+    transform: rotate(var(--r)) scale(0.96);
+  }
+  100% {
+    opacity: 0.88;
+    transform: rotate(var(--r)) scale(1);
+  }
+}
+
+/* The taped print drops onto the page, then the tape is pressed on.
+   Individual transform properties, so GSAP's pointer tilt composes on top. */
+.print {
+  rotate: var(--r);
+}
+html.js [data-draw="off"] .print {
+  opacity: 0;
+  translate: 0 -40px;
+  rotate: calc(var(--r) + 9deg);
+}
+html.js [data-draw="on"] .print {
+  animation: print-drop 0.9s cubic-bezier(0.2, 1.25, 0.4, 1) 0.15s both;
+}
+@keyframes print-drop {
+  from {
+    opacity: 0;
+    translate: 0 -40px;
+    rotate: calc(var(--r) + 9deg);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: var(--r);
+  }
+}
+html.js [data-draw="off"] .tape-in {
+  scale: 0 1;
+}
+html.js [data-draw="on"] .tape-in {
+  animation: tape-in 0.35s ease-out var(--tape-delay, 0.8s) both;
+}
+@keyframes tape-in {
+  from {
+    scale: 0 1;
+  }
+}
+
+/* ── About desk ──────────────────────────────────────────────────────── */
+@media (pointer: fine) and (min-width: 768px) {
+  .desk-item {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .desk-item[data-held] {
+    cursor: grabbing;
+  }
+  .desk-item[data-held] > .desk-drop {
+    scale: 1.04;
+    filter: drop-shadow(0 22px 24px rgb(11 18 56 / 0.28));
+  }
+}
+.desk-drop {
+  transition:
+    scale 0.25s ease,
+    filter 0.25s ease;
+}
+/* things land on the desk one after another */
+html.js [data-draw="off"] .desk-drop {
+  opacity: 0;
+  translate: 0 -34px;
+  rotate: 7deg;
+}
+html.js [data-draw="on"] .desk-drop {
+  animation: desk-drop 0.75s cubic-bezier(0.2, 1.25, 0.4, 1) calc(0.15s + var(--i) * 0.11s) both;
+}
+@keyframes desk-drop {
+  from {
+    opacity: 0;
+    translate: 0 -34px;
+    rotate: 7deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+.torn {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 96%,
+    94% 99%,
+    87% 96%,
+    80% 100%,
+    72% 97%,
+    63% 100%,
+    55% 96%,
+    46% 99%,
+    37% 96%,
+    29% 100%,
+    20% 97%,
+    12% 100%,
+    5% 96%,
+    0 99%
+  );
+}
+.todo-check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.35s ease;
+}
+.todo-next:hover .todo-check path,
+.todo-next:focus-visible .todo-check path {
+  stroke-dashoffset: 0;
+}
+/* embossed label-maker tape */
+.label-tape {
+  padding: 8px 16px;
+  background: #16181d;
+  color: #f3f4f6;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 0.6),
+    0 -1px 0 rgb(255 255 255 / 0.15);
+  box-shadow: 0 10px 18px -10px rgb(0 0 0 / 0.5);
+  clip-path: polygon(0 0, 100% 0, 98% 50%, 100% 100%, 0 100%, 2% 50%);
 }

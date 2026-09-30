@@ -1,239 +1,315 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import Portrait, { type PortraitMode } from "@/components/Portrait";
+import { DrawScope, Mark, Tape, Written } from "@/components/hand/Marks";
 import { site } from "@/data/site";
-import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { gsap } from "@/lib/gsap";
 
-type Chapter = {
-  word: string;
+/* ── desk objects ─────────────────────────────────────────────────────── */
+
+let topZ = 10;
+
+/**
+ * Something on the desk. On desktop it can be picked up and moved: it lifts
+ * and straightens while held, then settles at a slight angle where it's put
+ * down. On phones everything lies in a tidy stack and the page scrolls.
+ */
+function DeskItem({
+  children,
+  x,
+  y,
+  r,
+  i,
+  className,
+  label,
+}: {
+  children: React.ReactNode;
+  x: string;
+  y: string;
+  r: number;
+  i: number;
+  className?: string;
   label: string;
-  mode: PortraitMode;
-  title: string;
-  text: string;
-  facts: [string, string][];
-  caption: string;
-};
+}) {
+  const el = useRef<HTMLDivElement>(null);
 
-const chapters: Chapter[] = [
-  {
-    word: "Design",
-    label: "Design",
-    mode: "tone",
-    title: "I start with the person using it.",
-    text: "Then the system underneath. Flows, type, colour and motion are designed together in Figma, so nothing feels bolted on later.",
-    facts: [
-      ["Works in", "Figma, variables, prototypes"],
-      ["Recent", "Lumen and Atlas"],
-    ],
-    caption: "The painting, gradient-mapped into the site’s colours",
-  },
-  {
-    word: "Code",
-    label: "Code",
-    mode: "code",
-    title: "Then I build it myself.",
-    text: "TypeScript, React and Next.js: component-driven, accessible and fast from the first commit. What you approved in Figma is what ships.",
-    facts: [
-      ["Writes", "TypeScript, React, Next.js"],
-      ["Animates with", "GSAP, Framer Motion, three.js"],
-    ],
-    caption: "The same painting, redrawn from 16 characters",
-  },
-  {
-    word: "Human",
-    label: "Human",
-    mode: "color",
-    title: "And I’m a person, not a pipeline.",
-    text: "I live and work in Amman, Jordan. AI makes me faster; the taste, judgment and care are still mine. I’m open to full-time roles and freelance work.",
-    facts: [
-      ["Based in", site.location],
-      ["Local time", "clock"],
-    ],
-    caption: "The original painting",
-  },
-];
+  useEffect(() => {
+    const node = el.current!;
+    if (!matchMedia("(pointer: fine) and (min-width: 768px)").matches) return;
+    const pos = { x: 0, y: 0, r };
+    const apply = () => (node.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) rotate(${pos.r}deg)`);
+    let start: { px: number; py: number; x: number; y: number } | null = null;
+
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0 || (e.target as Element).closest("a, button")) return;
+      start = { px: e.clientX, py: e.clientY, x: pos.x, y: pos.y };
+      node.setPointerCapture(e.pointerId);
+      node.style.zIndex = String(++topZ);
+      node.dataset.held = "true";
+      gsap.to(pos, { r: r * 0.25, duration: 0.3, ease: "power2.out", onUpdate: apply });
+    };
+    const move = (e: PointerEvent) => {
+      if (!start) return;
+      pos.x = start.x + e.clientX - start.px;
+      pos.y = start.y + e.clientY - start.py;
+      apply();
+    };
+    const up = () => {
+      if (!start) return;
+      start = null;
+      delete node.dataset.held;
+      // put down a little crooked, never exactly where it was
+      gsap.to(pos, { r: r + (Math.random() - 0.5) * 6, duration: 0.6, ease: "elastic.out(1, 0.5)", onUpdate: apply });
+    };
+    apply();
+    node.addEventListener("pointerdown", down);
+    node.addEventListener("pointermove", move);
+    node.addEventListener("pointerup", up);
+    node.addEventListener("pointercancel", up);
+    return () => {
+      node.removeEventListener("pointerdown", down);
+      node.removeEventListener("pointermove", move);
+      node.removeEventListener("pointerup", up);
+      node.removeEventListener("pointercancel", up);
+    };
+  }, [r]);
+
+  return (
+    <div
+      ref={el}
+      aria-label={label}
+      role="group"
+      data-cursor="Pick up"
+      className={`desk-item md:absolute ${className ?? ""}`}
+      style={{ left: x, top: y, "--r": `${r}deg`, "--i": i, transform: `rotate(${r}deg)` } as React.CSSProperties}
+    >
+      <div className="desk-drop">{children}</div>
+    </div>
+  );
+}
+
+function Sticky({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="font-hand w-[210px] p-5 text-[22px] leading-[1.15] text-[#2d2a26] shadow-[0_1px_1px_rgba(0,0,0,0.08),0_14px_22px_-12px_rgba(0,0,0,0.35)]"
+      style={{ background: color }}
+    >
+      {children}
+    </div>
+  );
+}
 
 function AmmanClock() {
-  const [time, setTime] = useState("--:--");
+  const [now, setNow] = useState<{ h: number; m: number; label: string } | null>(null);
   useEffect(() => {
-    const fmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: site.timeZone });
-    const tick = () => setTime(fmt.format(new Date()));
+    const fmt = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: site.timeZone,
+    });
+    const tick = () => {
+      const label = fmt.format(new Date());
+      const [h, m] = label.split(":").map(Number);
+      setNow({ h, m, label });
+    };
     tick();
     const id = setInterval(tick, 15_000);
     return () => clearInterval(id);
   }, []);
-  return <span className="tabular-nums">{time}</span>;
+  const h = now ? ((now.h % 12) + now.m / 60) * 30 : 0;
+  const m = now ? now.m * 6 : 0;
+  return (
+    <div className="w-[190px] rounded-[6px] bg-white p-4 shadow-[0_14px_22px_-12px_rgba(0,0,0,0.35)]">
+      {/* a clock drawn by hand, telling Amman's real time */}
+      <svg viewBox="0 0 120 120" className="mx-auto h-28 w-28 text-ink" aria-hidden>
+        <path
+          d="M60 8 C 92 7, 113 30, 112 60 C 111 92, 90 112, 59 112 C 27 111, 8 90, 9 59 C 10 30, 30 9, 62 9"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+        {[0, 1, 2, 3].map((q) => (
+          <path
+            key={q}
+            d="M60 16 L60 24"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            transform={`rotate(${q * 90 + (q % 2 ? 2 : -1)} 60 60)`}
+          />
+        ))}
+        <path
+          d="M60 62 L60 34"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          transform={`rotate(${h} 60 60)`}
+          className="transition-transform duration-700"
+        />
+        <path
+          d="M60 62 L61 20"
+          stroke="var(--color-field)"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          transform={`rotate(${m} 60 60)`}
+          className="transition-transform duration-700"
+        />
+        <circle cx="60" cy="60" r="3.5" fill="currentColor" />
+      </svg>
+      <p className="font-hand mt-2 text-center text-xl leading-tight">
+        Amman, right now
+        <span className="block text-base text-ink-muted tabular-nums">{now?.label ?? "--:--"}</span>
+      </p>
+    </div>
+  );
 }
 
-/**
- * About as a short pinned story. The section holds still while you scroll
- * through three chapters; each one swaps the giant word behind, the copy,
- * and the way the portrait is drawn. Chapter changes are CSS transitions on
- * stacked layers (transform and opacity only), driven by one ScrollTrigger.
- */
-export default function About() {
-  const root = useRef<HTMLElement>(null);
-  const bar = useRef<HTMLSpanElement>(null);
-  const trigger = useRef<ScrollTrigger | null>(null);
-  const [active, setActive] = useState(0);
-  // Pinned by default (the common case, and what the server renders); only
-  // reduced motion falls back to a plain stacked section.
-  const [pinned, setPinned] = useState(true);
-
-  useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) setPinned(false);
-  }, []);
-
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        trigger.current = ScrollTrigger.create({
-          trigger: root.current,
-          start: "top top",
-          end: "+=200%",
-          pin: true,
-          anticipatePin: 1,
-          snap: {
-            snapTo: [0, 0.5, 1],
-            // nearest chapter, not "next in the scroll direction", so a fast
-            // scroll into the section never skips the first one
-            directional: false,
-            duration: { min: 0.25, max: 0.6 },
-            delay: 0.08,
-            ease: "power2.inOut",
-          },
-          onUpdate: (self) => {
-            const i = self.progress < 1 / 3 ? 0 : self.progress < 2 / 3 ? 1 : 2;
-            setActive((a) => (a === i ? a : i));
-            if (bar.current) bar.current.style.transform = `scaleY(${self.progress})`;
-          },
-        });
-        return () => {
-          trigger.current = null;
-        };
-      });
-    },
-    { scope: root },
+function Todo() {
+  const done = ["design it", "build it", "sweat the details"];
+  return (
+    <div className="torn relative w-[250px] bg-white px-6 pb-7 pt-6 shadow-[0_14px_22px_-12px_rgba(0,0,0,0.35)] [background-image:repeating-linear-gradient(transparent_0_31px,#dbe3f3_31px_32px)] [background-position:0_14px]">
+      <p className="font-hand text-2xl leading-none text-field">to do</p>
+      <ul className="font-hand mt-3 space-y-[3px] text-[22px] leading-[29px] text-ink">
+        {done.map((t, i) => (
+          <li key={t} className="relative flex items-center gap-2">
+            <span className="relative grid h-5 w-5 shrink-0 place-items-center rounded-[4px] border-2 border-ink/70">
+              <Mark
+                kind="check"
+                delay={0.9 + i * 0.35}
+                duration={0.3}
+                className="absolute -left-0.5 -top-2 h-6 w-7 text-field"
+                width={3}
+              />
+            </span>
+            <span className="relative">
+              {t}
+              <Mark
+                kind="strike"
+                delay={1.05 + i * 0.35}
+                duration={0.3}
+                className="absolute left-0 top-1/2 h-2 w-full text-ink/60"
+                width={2}
+              />
+            </span>
+          </li>
+        ))}
+        <li>
+          <a href="#contact" className="todo-next group flex items-center gap-2 text-field">
+            <span className="relative grid h-5 w-5 shrink-0 place-items-center rounded-[4px] border-2 border-field">
+              <svg
+                viewBox="0 0 40 30"
+                className="todo-check absolute -left-0.5 -top-2 h-6 w-7 overflow-visible"
+                aria-hidden
+              >
+                <path
+                  d="M 4 16 L 12 26 C 18 16, 26 6, 38 2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength={1}
+                />
+              </svg>
+            </span>
+            <span className="underline decoration-wavy decoration-1 underline-offset-4">your project?</span>
+          </a>
+        </li>
+      </ul>
+    </div>
   );
+}
 
-  const go = (i: number) => {
-    const st = trigger.current;
-    if (!st) return setActive(i);
-    const y = st.start + (st.end - st.start) * (i / 2);
-    window.scrollTo({ top: y + 2, behavior: "smooth" });
-  };
+/* ── section ──────────────────────────────────────────────────────────── */
 
-  const state = (i: number) => (i === active ? "on" : i < active ? "past" : "next");
-
+export default function About() {
   return (
     <section
-      ref={root}
       id="about"
       aria-labelledby="about-title"
-      className={`about relative bg-ink text-chalk ${pinned ? "h-[100svh] min-h-[640px] overflow-hidden" : "py-24"}`}
+      className="paper relative overflow-hidden px-5 py-24 text-ink sm:px-8 md:py-32"
     >
-      {/* giant chapter words */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        {chapters.map((c, i) => (
-          <span
-            key={c.word}
-            data-state={state(i)}
-            className="about-word display absolute whitespace-nowrap text-[26vw] uppercase leading-none md:text-[21vw]"
+      <DrawScope className="mx-auto max-w-[1400px]" threshold={0.2}>
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+          <h2
+            id="about-title"
+            className="display text-[clamp(3rem,8vw,7.5rem)] leading-[0.9] tracking-[-0.03em] [--wdth:96]"
           >
-            {c.word}
-          </span>
-        ))}
-      </div>
-
-      <div className="relative mx-auto grid h-full max-w-[1400px] grid-rows-[auto_1fr] gap-4 px-4 pb-6 pt-20 sm:px-6 md:grid-cols-12 md:grid-rows-1 md:items-center md:gap-8 md:pb-10 md:pt-24">
-        {/* portrait */}
-        <div className="relative mx-auto h-[38svh] md:order-2 md:col-span-5 md:col-start-5 md:h-[74svh]">
-          <div className="about-glow absolute inset-[-10%] rounded-full" aria-hidden />
-          <Portrait
-            luma="/portraits/about-luma.webp"
-            color="/portraits/about-color.webp"
-            tone="/portraits/about-tone.webp"
-            width={956}
-            height={1416}
-            mode={chapters[active].mode}
-            alt={`Painted portrait of ${site.name} seen from behind, glancing back over one shoulder`}
-            sizes="(min-width: 768px) 36vw, 60vw"
-            className="h-full"
-          />
-          <p className="absolute inset-x-0 -bottom-6 hidden text-center text-sm text-chalk-muted md:block">
-            {chapters[active].caption}
-          </p>
-        </div>
-
-        {/* copy */}
-        <div className="relative md:order-1 md:col-span-4 md:self-stretch">
-          <h2 id="about-title" className="sr-only">
-            About Essa
+            About me
           </h2>
-          <p aria-hidden className="display text-3xl uppercase [--wdth:120] md:absolute md:top-0 md:text-6xl">
-            I’m Essa.
-          </p>
-          <div className="relative mt-3 min-h-[20rem] md:absolute md:inset-x-0 md:bottom-0 md:mt-0 md:min-h-[22rem]">
-            {chapters.map((c, i) => (
-              <div
-                key={c.word}
-                data-state={pinned ? state(i) : "on"}
-                aria-hidden={pinned && i !== active}
-                className={`about-copy ${pinned ? "absolute inset-x-0 bottom-0" : "mb-10"}`}
-              >
-                <p className="flex gap-3 text-sm text-chalk-muted">
-                  <span className="tabular-nums text-signal">{String(i + 1).padStart(2, "0")}</span>
-                  {c.label}
-                </p>
-                <p className="mt-2 text-[1.35rem] font-medium leading-tight sm:text-3xl md:text-[2.4rem]">{c.title}</p>
-                <p className="mt-2 max-w-[40ch] text-[15px] leading-relaxed text-chalk/80 sm:text-base md:mt-3 md:text-lg">
-                  {c.text}
-                </p>
-                <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-chalk/15 pt-4 text-sm">
-                  {c.facts.map(([k, v]) => (
-                    <div key={k}>
-                      <dt className="text-chalk-muted">{k}</dt>
-                      <dd className="mt-1 font-medium">{v === "clock" ? <AmmanClock /> : v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ))}
-          </div>
+          <Written className="-rotate-3 pb-2 text-3xl text-field" delay={0.3}>
+            (the short version)
+          </Written>
+          <span className="ml-auto hidden items-end gap-1 pb-2 md:flex">
+            <Written className="rotate-2 text-xl text-ink-muted" delay={0.9}>
+              everything on this desk moves
+            </Written>
+            <Mark kind="arrow" delay={1.4} duration={0.45} className="h-12 w-14 text-ink-muted" width={3} />
+          </span>
         </div>
 
-        {/* chapter rail */}
-        {pinned && (
-          <nav
-            aria-label="About chapters"
-            className="absolute right-4 top-1/2 hidden -translate-y-1/2 md:right-6 md:flex md:flex-col md:items-end md:gap-6"
-          >
-            <span aria-hidden className="absolute right-[5px] top-0 h-full w-px bg-chalk/15">
-              <span ref={bar} className="block h-full w-full origin-top scale-y-0 bg-signal" />
-            </span>
-            {chapters.map((c, i) => (
-              <button
-                key={c.word}
-                type="button"
-                onClick={() => go(i)}
-                aria-current={i === active ? "step" : undefined}
-                className={`relative flex items-center gap-3 text-sm transition-colors ${
-                  i === active ? "text-chalk" : "text-chalk-muted hover:text-chalk"
-                }`}
-              >
-                {c.label}
-                <span
-                  className={`h-[11px] w-[11px] rounded-full border transition-colors ${
-                    i <= active ? "border-signal bg-signal" : "border-chalk/40 bg-ink"
-                  }`}
+        {/* the desk */}
+        <div className="desk relative mt-12 grid justify-items-center gap-10 sm:grid-cols-2 md:mt-10 md:block md:h-[780px]">
+          <DeskItem x="2%" y="4%" r={-4} i={0} label="Photo">
+            <figure className="relative w-[270px] bg-white p-3 pb-14 shadow-[0_2px_4px_rgba(11,18,56,0.08),0_24px_40px_-20px_rgba(11,18,56,0.45)]">
+              <div className="relative aspect-[4/5] overflow-hidden bg-[#10194a]">
+                <Image
+                  src="/portraits/about-color.webp"
+                  alt={`Painted portrait of ${site.name} from behind, glancing back`}
+                  fill
+                  sizes="270px"
+                  draggable={false}
+                  className="object-cover object-[50%_20%]"
                 />
-              </button>
-            ))}
-          </nav>
-        )}
-      </div>
+              </div>
+              <figcaption className="font-hand absolute inset-x-0 bottom-3 text-center text-2xl">
+                me, thinking it through
+              </figcaption>
+              <Tape className="-top-3 left-1/2 -translate-x-1/2" rotate={-4} />
+            </figure>
+          </DeskItem>
+
+          <DeskItem x="27%" y="0%" r={2} i={1} label="Index card">
+            <div className="w-[min(420px,86vw)] bg-[#fdfcf8] px-7 pb-7 pt-5 shadow-[0_14px_26px_-14px_rgba(0,0,0,0.4)] [background-image:linear-gradient(#e8a0a0,#e8a0a0),repeating-linear-gradient(transparent_0_29px,#cfdcf0_29px_30px)] [background-position:0_52px,0_52px] [background-repeat:no-repeat,repeat] [background-size:100%_1.5px,100%_100%]">
+              <p className="font-hand text-3xl leading-[52px] text-field">Essa Adarbeh</p>
+              <p className="mt-1 text-[17px] leading-[30px]">
+                I’m a designer who codes, or a developer who designs, depending on the day. I live in Amman, Jordan. I
+                like interfaces that feel obvious, and code that stays that way.
+              </p>
+            </div>
+          </DeskItem>
+
+          <DeskItem x="62%" y="3%" r={5} i={2} label="Note">
+            <Sticky color="#fde68a">Designer and developer in one person. Nothing gets lost in handoff.</Sticky>
+          </DeskItem>
+
+          <DeskItem x="82%" y="14%" r={-6} i={3} label="Note">
+            <Sticky color="#bfdbfe">AI in the loop. A human at the wheel.</Sticky>
+          </DeskItem>
+
+          <DeskItem x="24%" y="46%" r={-3} i={4} label="Clock">
+            <AmmanClock />
+          </DeskItem>
+
+          <DeskItem x="42%" y="42%" r={3} i={5} label="To-do list">
+            <Todo />
+          </DeskItem>
+
+          <DeskItem x="64%" y="50%" r={-2} i={6} label="Note">
+            <Sticky color="#fbcfe8">Taste, judgment and care stay mine.</Sticky>
+          </DeskItem>
+
+          <DeskItem x="3%" y="72%" r={1} i={7} label="Label">
+            <p className="label-tape">OPEN TO FULL-TIME + FREELANCE</p>
+          </DeskItem>
+
+          <DeskItem x="81%" y="62%" r={4} i={8} label="Note">
+            <Sticky color="#bbf7d0">I designed and built this whole site. It’s its own case study.</Sticky>
+          </DeskItem>
+        </div>
+      </DrawScope>
     </section>
   );
 }

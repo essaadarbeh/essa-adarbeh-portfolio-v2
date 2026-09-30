@@ -43,13 +43,7 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 - a static **Cobalt** version, used without JS or WebGL and for the share card
 - the contact card's **avatar** crop
 
-`components/Portrait.tsx` shows the painting three ways:
-
-- **tone**: the palette gradient map
-- **code**: the painting redrawn from 16 characters, sorted by ink coverage, so each cell's glyph matches its brightness
-- **color**: the original, dissolving in through noise
-
-On top of all three, a lens follows the pointer and shows the original colours. The shader renders on demand, so an idle portrait costs nothing, and the canvas resolution is capped on phones.
+The hero uses the true-colour painting as a taped print, and About uses the second portrait on the desk. The greyscale and Cobalt versions are kept for the parked palette system and the share card.
 
 ## Sections
 
@@ -80,7 +74,7 @@ Choices that got it there:
 - On phones, no section-wide colour fades and no letter-width animation (both force repaint or re-layout every frame).
 - The compare slider moves by transforms only.
 - Each section hydrates as its own Suspense boundary.
-- three.js loads lazily and portraits render on demand.
+- No WebGL: the hand-made hero is SVG and CSS, and the doodle canvas only draws while you draw.
 - Covers are served as WebP, which decodes faster than AVIF on phones.
 
 ## Accessibility

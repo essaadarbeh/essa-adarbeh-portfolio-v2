@@ -232,8 +232,7 @@ export default function Contact() {
         <div className="mt-14 grid gap-12 md:mt-20 md:grid-cols-12">
           <div className="md:col-span-5">
             <p className="max-w-[38ch] text-xl leading-snug text-field-muted">
-              I’m open to full-time roles and freelance projects. Tell me what you’re working on and I’ll reply within a
-              day.
+              I’m open to full-time roles and freelance projects. Tell me what you’re working on.
             </p>
 
             {/* signed by hand */}

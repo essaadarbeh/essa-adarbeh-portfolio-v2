@@ -231,7 +231,7 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
           className="mx-auto grid max-w-[1400px] gap-10 px-4 pb-20 pt-20 sm:px-6 md:grid-cols-12 md:pb-28 md:pt-28"
         >
           <div className="md:col-span-5">
-            <Heading id="brief" note="(what I was asked)">
+            <Heading id="brief" note="(self-initiated, so I set it)">
               The brief
             </Heading>
           </div>

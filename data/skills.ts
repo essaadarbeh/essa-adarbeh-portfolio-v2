@@ -125,7 +125,7 @@ export const keyRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 export const process = [
   {
     title: "Understand",
-    text: "Every project starts with the problem, not the pixels. I map the user, the goal and the constraints so the design solves something real.",
+    text: "I map the user, the goal and the constraints before drawing anything. For Atlas, that meant one question first: when should the agent stop and ask?",
   },
   {
     title: "Design",
@@ -137,6 +137,6 @@ export const process = [
   },
   {
     title: "Polish",
-    text: "The last ten percent that reads as premium: micro-interactions, performance budgets, edge cases. Products, not demos.",
+    text: "Micro-interactions, performance budgets and the edge cases: empty states, errors, slow connections.",
   },
 ];

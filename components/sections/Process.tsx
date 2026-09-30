@@ -33,8 +33,8 @@ export default function Process() {
             </h2>
             <div className="self-end md:col-span-4">
               <p className="max-w-[40ch] text-lg leading-snug text-ink-muted">
-                Most projects lose something between the design file and the browser. Mine don’t have that gap. Drag the
-                handle to compare the two.
+                The contact card from this page, as a Figma frame and as the live component. Drag the handle to compare
+                the two.
               </p>
               <span className="mt-4 flex items-end gap-1">
                 <Written className="rotate-[-2deg] text-xl text-field" delay={1.6}>

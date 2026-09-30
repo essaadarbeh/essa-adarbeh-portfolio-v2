@@ -8,6 +8,7 @@ npm run dev        # http://localhost:3000
 npm run build      # production build
 npm run lint && npm run typecheck
 npm run bake       # regenerate portrait textures (see below)
+node scripts/trace-portrait.mjs   # redraw the portrait sketches
 node scripts/check-palettes.mjs   # contrast check for every palette
 ```
 
@@ -43,11 +44,11 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 - a static **Cobalt** version, used without JS or WebGL and for the share card
 - the contact card's **avatar** crop
 
-The hero uses the true-colour painting as a taped print, and About uses the second portrait on the desk. The greyscale and Cobalt versions are kept for the parked palette system and the share card.
+`scripts/trace-portrait.mjs` then turns each painting into a drawing: the silhouette and light-and-shadow contours as SVG paths (`data/sketch-*.json`, the lines the pen follows), and an ink sketch (`public/portraits/*-ink.webp`) made with an XDoG line filter plus pencil hatching in the darkest shadows. The hero draws and paints the first portrait over these; About uses the second portrait on the desk. The greyscale and Cobalt versions are kept for the parked palette system and the share card.
 
 ## Sections
 
-- **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. The painted portrait is taped on as a print and leans toward the pointer, and an "Available for work" stamp lands. Visitors can draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
+- **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through; on phones a tap swaps sketch and painting. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
 - **About.** A desk of real objects you can pick up and move: the photo, an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones it's a tidy stack that scrolls normally.
 - **Work.** Lumen and Atlas, with titles that roll letter by letter on hover (transform-only). Every project opens its own case study with a page transition in that project's colour.
 - **Case studies** (`/work/lumen`, `/work/atlas`):

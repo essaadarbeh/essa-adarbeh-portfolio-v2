@@ -1,20 +1,21 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Doodle from "@/components/hand/Doodle";
-import { DrawScope, Mark, Tape, Written } from "@/components/hand/Marks";
+import { DrawScope, Mark, Written } from "@/components/hand/Marks";
+import SketchPortrait from "@/components/hand/SketchPortrait";
+import heroSketch from "@/data/sketch-hero.json";
 import { site } from "@/data/site";
 import { gsap, INTRO_DONE, useGSAP } from "@/lib/gsap";
 
 /**
  * The first page of the notebook. The sentence is typeset; everything a hand
- * would add arrives after it: a circle, an underline, a note in the margin,
- * a taped print, a rubber stamp. Then the pen is yours.
+ * would add arrives after it: a circle, an underline, then a pen draws Essa
+ * and paint washes in over the lines. Then the pen is yours.
  */
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
-  const photo = useRef<HTMLElement>(null);
+  const figure = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
   const [drew, setDrew] = useState(false);
   const onFirstStroke = useCallback(() => setDrew(true), []);
@@ -39,33 +40,13 @@ export default function Hero() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference) and (pointer: fine)", () => {
-        // the print leans toward the pointer, like picking up a photo
-        const el = photo.current!;
-        const rx = gsap.quickTo(el, "rotationX", { duration: 0.6, ease: "power3.out" });
-        const ry = gsap.quickTo(el, "rotationY", { duration: 0.6, ease: "power3.out" });
-        const move = (e: PointerEvent) => {
-          const r = el.getBoundingClientRect();
-          ry(((e.clientX - r.left) / r.width - 0.5) * 12);
-          rx(-((e.clientY - r.top) / r.height - 0.5) * 12);
-        };
-        const leave = () => {
-          rx(0);
-          ry(0);
-        };
-        el.addEventListener("pointermove", move);
-        el.addEventListener("pointerleave", leave);
-
-        // scrolling away, the print drifts up a little slower than the page
-        gsap.to(el, {
-          yPercent: -12,
+      mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px)", () => {
+        // scrolling away, the figure stays behind a little longer than the page
+        gsap.to(figure.current, {
+          yPercent: 14,
           ease: "none",
           scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
         });
-        return () => {
-          el.removeEventListener("pointermove", move);
-          el.removeEventListener("pointerleave", leave);
-        };
       });
     },
     { scope: root },
@@ -77,15 +58,15 @@ export default function Hero() {
 
       <DrawScope
         on={on}
-        className="relative z-10 mx-auto grid min-h-[100svh] max-w-[1400px] items-center gap-12 px-5 pb-16 pt-28 sm:px-8 md:grid-cols-12 md:gap-8 md:pt-24"
+        className="relative z-10 mx-auto grid min-h-[100svh] max-w-[1400px] content-center px-5 pb-10 pt-24 sm:px-8 md:grid-cols-12 md:pb-16"
       >
-        {/* words */}
-        <div className="md:col-span-7">
+        {/* the sentence */}
+        <div className="relative z-10 md:col-span-7">
           <Written className="-rotate-2 text-3xl text-field sm:text-4xl" delay={0.1}>
             hi, I’m Essa.
           </Written>
 
-          <h1 className="display mt-4 text-[clamp(3rem,7.4vw,7.6rem)] leading-[0.95] tracking-[-0.03em] [--wdth:96]">
+          <h1 className="display mt-3 text-[clamp(2.9rem,7.4vw,7.6rem)] leading-[0.95] tracking-[-0.03em] [--wdth:96] md:mt-4">
             <span className="sr-only">
               {site.name}, {site.role.toLowerCase()} in {site.location}.{" "}
             </span>
@@ -109,7 +90,7 @@ export default function Hero() {
           </h1>
 
           {/* margin note */}
-          <div className="relative mt-6 flex items-start gap-2 pl-2 sm:ml-[42%] sm:mt-2">
+          <div className="relative mt-2 hidden items-start gap-2 pl-2 md:ml-[42%] md:flex">
             <Mark
               kind="arrowLeft"
               delay={1.7}
@@ -120,8 +101,59 @@ export default function Hero() {
               no handoff, so nothing gets lost in between
             </Written>
           </div>
+        </div>
 
-          <p className="mt-10 max-w-[46ch] text-lg leading-relaxed text-ink-muted">
+        {/* Essa, drawn then painted. In the flow on phones (right under the
+            headline), standing at the right edge of the page on desktop. */}
+        <div
+          ref={figure}
+          data-no-ink
+          className="relative -mt-10 ml-auto mr-[-6vw] aspect-[425/900] h-[64svh] max-h-[640px] md:absolute md:bottom-0 md:right-[7%] md:m-0 md:h-[min(96svh,1000px)] md:max-h-none"
+        >
+          <SketchPortrait
+            sketch={heroSketch}
+            color="/portraits/hero-color.webp"
+            ink="/portraits/hero-ink.webp"
+            alt={`${site.name}, drawn in ink and painted, in profile and looking up`}
+            focus={[110, 240]}
+            play={on}
+            unwashOn={root}
+            className="h-full w-full"
+          />
+
+          {/* what it is, and what to do with it */}
+          <div className="pointer-events-none absolute left-[-64%] top-[11%] hidden w-[62%] flex-col items-end md:flex">
+            <Written className="rotate-[3deg] text-right text-2xl leading-tight text-ink-muted" delay={4.2}>
+              that’s me, drawn first
+            </Written>
+            <Written className="rotate-[3deg] text-right text-xl text-field" delay={4.7}>
+              hover: the sketch is still under the paint
+            </Written>
+            <Mark kind="arrow" delay={5.1} duration={0.45} className="mr-1 mt-1 h-12 w-16 text-ink-muted" width={3} />
+          </div>
+          <span className="absolute left-[-34%] top-[42%] md:hidden">
+            <Written className="-rotate-6 text-xl text-field" delay={4.2}>
+              tap me
+            </Written>
+          </span>
+
+          {/* rubber stamp */}
+          <div
+            className="stamp absolute bottom-[14%] left-[-60%] z-20 rounded-[10px] border-[3px] border-field px-4 py-2 text-field md:bottom-[9%] md:left-[-68%]"
+            style={{ "--r": "-9deg", "--delay": "4.4s", transform: "rotate(-9deg)" } as React.CSSProperties}
+          >
+            <p className="display text-base uppercase leading-none tracking-wide [--wdth:115] md:text-xl">
+              Available for work
+            </p>
+            <p className="mt-1 text-center text-[9px] font-medium uppercase tracking-[0.2em] md:text-xs">
+              Amman, Jordan · 2026
+            </p>
+          </div>
+        </div>
+
+        {/* the plain version, and where to go next */}
+        <div className="relative z-10 md:col-span-6 md:col-start-1">
+          <p className="mt-8 max-w-[46ch] text-lg leading-relaxed text-ink-muted md:mt-10">
             Frontend developer and UI/UX designer in Amman, Jordan. I make product interfaces that read at a glance,
             then ship them as fast, accessible code.
           </p>
@@ -139,45 +171,6 @@ export default function Hero() {
               </Written>
               <Mark kind="squiggle" delay={3.4} duration={0.5} className="h-3 w-12 text-ink-muted" width={5} />
             </span>
-          </div>
-        </div>
-
-        {/* the taped print */}
-        <div className="relative mx-auto w-[min(76vw,390px)] md:col-span-5 md:mr-10 [perspective:1200px]">
-          <figure
-            ref={photo}
-            data-no-ink
-            className="print relative [transform-style:preserve-3d]"
-            style={{ "--r": "3deg" } as React.CSSProperties}
-          >
-            <div className="print-inner bg-white p-3 pb-16 shadow-[0_2px_4px_rgba(11,18,56,0.08),0_24px_48px_-20px_rgba(11,18,56,0.45)]">
-              <div className="relative aspect-[4/5] overflow-hidden bg-[radial-gradient(90%_70%_at_50%_20%,#3a48ff,#1a2490_60%,#0b1238)]">
-                <Image
-                  src="/portraits/hero-color.webp"
-                  alt={`Painted portrait of ${site.name} in profile, looking up`}
-                  fill
-                  priority
-                  sizes="(min-width: 768px) 420px, 78vw"
-                  className="object-cover object-[50%_8%]"
-                />
-              </div>
-              <figcaption className="absolute inset-x-0 bottom-3 text-center">
-                <Written className="text-2xl text-ink" delay={1.5}>
-                  me, somewhere in Amman
-                </Written>
-              </figcaption>
-            </div>
-            <Tape className="tape-in -left-7 top-3" rotate={-32} />
-            <Tape className="tape-in -right-7 top-5 [--tape-delay:0.95s]" rotate={38} />
-          </figure>
-
-          {/* rubber stamp */}
-          <div
-            className="stamp absolute -bottom-14 -left-2 z-20 rounded-[10px] border-[3px] border-field px-4 py-2 text-field sm:-left-16"
-            style={{ "--r": "-9deg", "--delay": "2.4s", transform: "rotate(-9deg)" } as React.CSSProperties}
-          >
-            <p className="display text-xl uppercase leading-none tracking-wide [--wdth:115]">Available for work</p>
-            <p className="mt-1 text-center text-xs font-medium uppercase tracking-[0.2em]">Amman, Jordan · 2026</p>
           </div>
         </div>
       </DrawScope>

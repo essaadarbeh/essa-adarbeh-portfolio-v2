@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ── Tokens ──────────────────────────────────────────────────────────────
+   Five colours, taken from the portrait itself: the suit's navy (ink), the
+   field it stands on (cobalt), its highlights (sky, chalk) and one warm
+   signal (marigold) that is only ever used for state — availability, focus,
+   the lens rim. Contrast is measured against the surface each is used on. */
+@theme inline {
+  --color-ink: #0b1238;
+  --color-cobalt: #2b3bff;
+  --color-sky: #a9b8ff;
+  --color-chalk: #eef0f6;
+  --color-marigold: #ffc24b;
+
+  --color-ink-muted: #4a5070; /* on chalk, 7.3:1 */
+  --color-chalk-muted: #9aa3c7; /* on ink, 7.1:1 */
+  --color-cobalt-muted: #d6dbff; /* on cobalt, 5.2:1 */
+
+  --font-display: var(--font-anybody);
+  --font-sans: var(--font-onest);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+  }
+
+  body {
+    background: var(--color-chalk);
+    color: var(--color-ink);
+    font-family: var(--font-onest), system-ui, sans-serif;
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--color-marigold);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-marigold);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px var(--color-ink);
+    border-radius: 4px;
+  }
+
+  /* Lenis owns the scroll; native smooth scrolling would fight it. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: clip;
+  }
+}
+
+/* ── Type ────────────────────────────────────────────────────────────────
+   Anybody carries every headline. Its width axis (50–150) is the motion
+   material of the whole site: letters stretch on arrival, compress as you
+   scroll away, and widen under the cursor. --wdth is what gets animated. */
+@utility display {
+  font-family: var(--font-anybody), system-ui, sans-serif;
+  font-weight: 800;
+  font-variation-settings: "wdth" var(--wdth, 100);
+  line-height: 0.82;
+  letter-spacing: -0.02em;
+}
+
+@utility stretchy {
+  transition: font-variation-settings 0.6s var(--ease-out-expo);
+  &:hover {
+    font-variation-settings: "wdth" 150;
+  }
+}
+
+/* The intro hides hero pieces until fonts are ready and the timeline runs.
+   Only applied when JS is on (the class is set by an inline script). */
+html.js:not([data-intro="done"]) [data-intro-hide] {
+  visibility: hidden;
+}
+
+/* Cursor is only drawn for fine pointers. */
+@media (pointer: fine) {
+  html.has-cursor,
+  html.has-cursor a,
+  html.has-cursor button,
+  html.has-cursor [role="slider"] {
+    cursor: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* SplitText chars declare the axis themselves, so a --wdth tween on a single
+   char (intro) or on its line (scroll) both land. */
+.display .char {
+  font-variation-settings: "wdth" var(--wdth, 100);
+}

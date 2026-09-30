@@ -32,7 +32,7 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 | chalk  | Light sections, text on dark                                 |
 | signal | State only: availability, focus rings, lens rim, cursor labels |
 
-Visitors switch palettes from the nav, the mobile menu or the Contact section, or by clicking the hero portrait. The new palette grows out of the click point as a circle (a View Transition), and the portraits recolour in the same frame. The choice is remembered per browser, and a boot script applies it before first paint, so there's no flash of Cobalt. `scripts/check-palettes.mjs` checks every text pairing against WCAG AA.
+**The switcher is parked for now** (`site.features.palettes` in `data/site.ts`), so the site runs in Cobalt until brand colours are decided. With the flag on, visitors switch palettes from the nav, the mobile menu or the Contact section. The new palette grows out of the click point as a circle (a View Transition), and the portraits recolour in the same frame. The choice is remembered per browser, and a boot script applies it before first paint, so there's no flash of Cobalt. `scripts/check-palettes.mjs` checks every text pairing against WCAG AA.
 
 ## The portraits
 
@@ -53,14 +53,19 @@ On top of all three, a lens follows the pointer and shows the original colours. 
 
 ## Sections
 
-- **Hero.** The name sits behind the portrait. Letters rise and stretch on load, while the portrait develops up from the floor.
-- **About.** An interactive profile screen with three views: Designer, Developer and Person. Each view changes the portrait mode, the headline's letter width, and the text, which decodes into place.
-- **Work.** Lumen and Atlas. The section takes on each project's colours as you reach it, covers open and tilt, and each project includes a live piece rebuilt from its Figma file:
-  - **Lumen token playground.** Change the brand colour, radius or density tokens and every stat card updates. Switch the date range to morph the sparklines, and hover one to read values.
-  - **Atlas research run.** A plan executes with tool calls, then Atlas stops and asks permission. Approving or denying changes how the run ends. Replay restarts it.
-- **Process.** A draggable comparison of one contact card as a design file with redlines and as working UI. Picking a project type there and pressing the button pre-fills the Contact composer.
-- **Toolkit.** A working keyboard with one tool per key. Click, tap, or type on a real keyboard. The bottom row groups tools by kind, and Space shuffles.
-- **Contact.** A composer that builds the email (project type, timeline, note) and opens it in your mail app. It also has copy-to-clipboard, live Amman time and the palette switcher.
+- **Hero.** The painting as a field of particles (`components/ParticlePortrait.tsx`). The points assemble from a scattered cloud on load, part around the cursor and show their true colour there, ripple outward on click, and drift apart like dust as you scroll. A role line decodes through what I design.
+- **About.** A pinned, scroll-driven story in three chapters: Design, Code and Human. Each chapter swaps a giant outlined word, the copy, and the way the portrait is drawn (palette tone, a grid of code characters, the original painting). It snaps to the nearest chapter, and the rail on the right jumps between them.
+- **Work.** Lumen and Atlas, with titles that roll letter by letter on hover (transform-only). Every project opens its own case study with a page transition in that project's colour.
+- **Case studies** (`/work/lumen`, `/work/atlas`):
+  - the brief and approach
+  - an interactive user flow (it draws as you scroll, and each step explains itself; Atlas includes the "deny" branch)
+  - a compare slider: Lumen's wireframe against the final screen, and Atlas in dark and light mode, driven by the real token values from Figma
+  - the system in numbers, plus a component inventory with every variant
+  - the live demo
+  - a reflection, and a link to the next case
+- **Process.** The design-file compare slider, then a pinned scene where one contact card evolves through the four steps: sticky-note questions, a redlined wireframe, code writing itself, then the finished, working card.
+- **Toolkit.** A working keyboard with one tool per key. It plays a short tour by itself until someone interacts, and a grouped index below lists every tool at a glance.
+- **Contact.** A composer that builds the email and opens it in your mail app. It also has copy-to-clipboard and live Amman time.
 
 ## Performance
 

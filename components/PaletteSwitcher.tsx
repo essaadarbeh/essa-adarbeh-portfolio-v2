@@ -2,10 +2,12 @@
 
 import { palettes } from "@/lib/palettes";
 import { setPalette, usePalette } from "@/lib/palette-client";
+import { site } from "@/data/site";
 
 /** A row of swatches. Each shows its field colour with the signal as a dot. */
 export default function PaletteSwitcher({ className, labelled }: { className?: string; labelled?: boolean }) {
   const active = usePalette();
+  if (!site.features.palettes) return null;
 
   return (
     <div role="radiogroup" aria-label="Colour palette" className={`flex items-center gap-1.5 ${className ?? ""}`}>

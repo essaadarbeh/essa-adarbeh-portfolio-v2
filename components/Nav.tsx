@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import TransitionLink from "@/components/TransitionLink";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
 import PaletteSwitcher from "@/components/PaletteSwitcher";
@@ -9,6 +11,20 @@ import PaletteSwitcher from "@/components/PaletteSwitcher";
  * Three floating pills on an ink glass, so they read on every section colour
  * without re-theming. Slides away while scrolling down, returns on the way up.
  */
+/** On the home page a plain anchor; elsewhere a transition back home. */
+function NavLink({ href, label, ...rest }: { href: string; label: string } & React.ComponentProps<"a">) {
+  const home = usePathname() === "/";
+  if (home) return <a href={href} {...rest} />;
+  return (
+    <TransitionLink
+      href={`/${href}`}
+      color="#0b1238"
+      label={label}
+      {...(rest as Omit<React.ComponentProps<typeof TransitionLink>, "href" | "color" | "label">)}
+    />
+  );
+}
+
 export default function Nav() {
   const ref = useRef<HTMLElement>(null);
   const [active, setActive] = useState<string>("");
@@ -55,27 +71,32 @@ export default function Nav() {
   return (
     <header ref={ref} className="fixed inset-x-0 top-0 z-[100] px-3 pt-3 sm:px-5 sm:pt-5" data-intro-hide>
       <nav aria-label="Main" className="flex items-center justify-between gap-3">
-        <a href="#top" className={`${pill} flex h-11 items-center gap-2 pl-1.5 pr-4 text-sm font-medium`}>
+        <NavLink
+          href="#top"
+          label="Essa"
+          className={`${pill} flex h-11 items-center gap-2 pl-1.5 pr-4 text-sm font-medium`}
+        >
           <span className="grid h-8 w-8 place-items-center rounded-full bg-field font-display text-[13px] font-extrabold [--wdth:130]">
             EA
           </span>
           <span className="hidden sm:inline">{site.name}</span>
-        </a>
+        </NavLink>
 
         <ul className={`${pill} hidden h-11 items-center px-1.5 text-sm md:flex`}>
           {site.nav.map((n) => {
             const on = active === n.href.slice(1);
             return (
               <li key={n.href}>
-                <a
+                <NavLink
                   href={n.href}
+                  label={n.label}
                   aria-current={on ? "true" : undefined}
                   className={`relative block rounded-full px-4 py-2 transition-colors duration-300 ${
                     on ? "bg-chalk text-ink" : "text-chalk/80 hover:text-chalk"
                   }`}
                 >
                   {n.label}
-                </a>
+                </NavLink>
               </li>
             );
           })}
@@ -93,13 +114,17 @@ export default function Nav() {
             {open ? "Close" : "Menu"}
           </button>
 
-          <a href="#contact" className={`${pill} hidden h-11 sm:flex items-center gap-2.5 px-4 text-sm font-medium`}>
+          <NavLink
+            href="#contact"
+            label="Contact"
+            className={`${pill} hidden h-11 sm:flex items-center gap-2.5 px-4 text-sm font-medium`}
+          >
             <span className="relative flex h-2 w-2">
               <span className="absolute inset-0 animate-ping rounded-full bg-signal opacity-60 motion-reduce:hidden" />
               <span className="relative h-2 w-2 rounded-full bg-signal" />
             </span>
             {site.available ? "Available for work" : "Get in touch"}
-          </a>
+          </NavLink>
         </div>
       </nav>
 
@@ -108,17 +133,18 @@ export default function Nav() {
           <ul>
             {site.nav.map((n) => (
               <li key={n.href}>
-                <a
+                <NavLink
                   href={n.href}
+                  label={n.label}
                   onClick={() => setOpen(false)}
                   className="display block rounded-2xl px-4 py-3 text-5xl uppercase [--wdth:120] active:bg-white/10"
                 >
                   {n.label}
-                </a>
+                </NavLink>
               </li>
             ))}
           </ul>
-          <div className="mt-2 border-t border-chalk/15 px-3 pb-2 pt-4">
+          <div className={`mt-2 border-t border-chalk/15 px-3 pb-2 pt-4 ${site.features.palettes ? "" : "hidden"}`}>
             <p className="mb-2 text-sm text-chalk-muted">Palette</p>
             <PaletteSwitcher labelled className="flex-wrap" />
           </div>

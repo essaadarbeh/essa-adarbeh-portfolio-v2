@@ -277,7 +277,12 @@ export default function Portrait({
           // ── render on demand ────────────────────────────────────────────
           // Nothing draws while the portrait is idle. Anything that changes a
           // uniform calls wake(ms) to keep frames coming for that long.
-          let visible = false;
+          // measured directly: an IntersectionObserver can misreport inside a
+          // pinned (position: fixed) section
+          const onScreen = () => {
+            const r = el.getBoundingClientRect();
+            return r.bottom > -120 && r.top < innerHeight + 120 && r.width > 0;
+          };
           let raf = 0;
           let awakeUntil = 0;
           let velocity = 0;
@@ -297,6 +302,7 @@ export default function Portrait({
             uniforms.uVelocity.value = reduced || coarse ? 0 : velocity;
             uniforms.uMouse.value.lerp(target, 0.18);
             uniforms.uRadius.value = radius.v;
+            const visible = onScreen();
             if (visible) draw();
             const busy =
               performance.now() < awakeUntil ||
@@ -315,7 +321,7 @@ export default function Portrait({
             renderer.setSize(r.width, r.height, false);
             uniforms.uRes.value.set(r.width * dpr, r.height * dpr);
             uniforms.uCell.value = (r.width < 420 ? 9 : 12) * dpr;
-            if (visible) draw();
+            if (onScreen()) draw();
           };
           const ro = new ResizeObserver(resize);
           ro.observe(el);
@@ -323,8 +329,7 @@ export default function Portrait({
 
           const io = new IntersectionObserver(
             ([e]) => {
-              visible = e.isIntersecting;
-              if (visible) wake(100);
+              if (e.isIntersecting) wake(100);
             },
             { rootMargin: "120px" },
           );
@@ -336,7 +341,7 @@ export default function Portrait({
             ramp.image.data!.set(rampBytes(p));
             ramp.needsUpdate = true;
             uniforms.uSignal.value = signal(p);
-            if (visible) draw();
+            if (onScreen()) draw();
           };
           window.addEventListener(PALETTE_EVENT, onPalette);
 
@@ -419,23 +424,18 @@ export default function Portrait({
         })
         .catch(fail);
 
-    let near: IntersectionObserver | null = null;
+    // Off-screen portraits start once the browser is idle after load, so they
+    // never compete with the first paint. (Not an IntersectionObserver: inside
+    // a pinned section it can report the portrait as hidden while it's shown.)
+    let idle = 0;
+    const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1200));
+    const cic = window.cancelIdleCallback ?? window.clearTimeout;
     if (priority) init();
-    else {
-      near = new IntersectionObserver(
-        ([e]) => {
-          if (!e.isIntersecting) return;
-          near?.disconnect();
-          init();
-        },
-        { rootMargin: "100% 0px" },
-      );
-      near.observe(el);
-    }
+    else idle = ric(() => init(), { timeout: 2500 });
 
     return () => {
       disposed = true;
-      near?.disconnect();
+      cic(idle);
       teardown();
     };
   }, [luma, color, width, height, develop, lens, priority]);

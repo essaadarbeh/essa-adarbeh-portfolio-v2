@@ -2,61 +2,55 @@
 
 import { useEffect, useRef, useState } from "react";
 import Portrait, { type PortraitMode } from "@/components/Portrait";
-import { useDecode } from "@/components/useDecode";
 import { site } from "@/data/site";
-import { gsap, useGSAP } from "@/lib/gsap";
-import { usePalette } from "@/lib/palette-client";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
-type View = {
-  id: string;
+type Chapter = {
+  word: string;
   label: string;
   mode: PortraitMode;
-  /** Width axis of the headline in this view. */
-  wdth: number;
+  title: string;
   text: string;
   facts: [string, string][];
-  portrait: (palette: string) => string;
+  caption: string;
 };
 
-const views: View[] = [
+const chapters: Chapter[] = [
   {
-    id: "designer",
-    label: "Designer",
+    word: "Design",
+    label: "Design",
     mode: "tone",
-    wdth: 150,
-    text: "I start with the person using it, then the system underneath. Flows, type, colour and motion are designed together in Figma, so nothing feels bolted on later.",
+    title: "I start with the person using it.",
+    text: "Then the system underneath. Flows, type, colour and motion are designed together in Figma, so nothing feels bolted on later.",
     facts: [
       ["Works in", "Figma, variables, prototypes"],
-      ["Thinks in", "Systems, flows and motion"],
       ["Recent", "Lumen and Atlas"],
     ],
-    portrait: (p) => `The painting, gradient-mapped through the ${p} palette.`,
+    caption: "The painting, gradient-mapped into the site’s colours",
   },
   {
-    id: "developer",
-    label: "Developer",
+    word: "Code",
+    label: "Code",
     mode: "code",
-    wdth: 58,
-    text: "Then I build it myself: TypeScript, React and Next.js, component-driven, accessible and fast from the first commit. What you approved in Figma is what ships.",
+    title: "Then I build it myself.",
+    text: "TypeScript, React and Next.js: component-driven, accessible and fast from the first commit. What you approved in Figma is what ships.",
     facts: [
       ["Writes", "TypeScript, React, Next.js"],
       ["Animates with", "GSAP, Framer Motion, three.js"],
-      ["This site", "Designed and built by me"],
     ],
-    portrait: () => "The same painting redrawn from 16 characters, densest where it’s brightest.",
+    caption: "The same painting, redrawn from 16 characters",
   },
   {
-    id: "person",
-    label: "Person",
+    word: "Human",
+    label: "Human",
     mode: "color",
-    wdth: 100,
+    title: "And I’m a person, not a pipeline.",
     text: "I live and work in Amman, Jordan. AI makes me faster; the taste, judgment and care are still mine. I’m open to full-time roles and freelance work.",
     facts: [
       ["Based in", site.location],
       ["Local time", "clock"],
-      ["Open to", "Full-time and freelance"],
     ],
-    portrait: () => "The original painting, no recolouring.",
+    caption: "The original painting",
   },
 ];
 
@@ -72,164 +66,173 @@ function AmmanClock() {
   return <span className="tabular-nums">{time}</span>;
 }
 
-/** Text that decodes into place whenever it changes. */
-function Decoded({ text }: { text: string }) {
-  const ref = useDecode<HTMLSpanElement>(text);
-  return (
-    <>
-      <span className="decode-source sr-only">{text}</span>
-      <span aria-hidden ref={ref} />
-    </>
-  );
-}
-
+/**
+ * About as a short pinned story. The section holds still while you scroll
+ * through three chapters; each one swaps the giant word behind, the copy,
+ * and the way the portrait is drawn. Chapter changes are CSS transitions on
+ * stacked layers (transform and opacity only), driven by one ScrollTrigger.
+ */
 export default function About() {
   const root = useRef<HTMLElement>(null);
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const indicator = useRef<HTMLSpanElement>(null);
+  const bar = useRef<HTMLSpanElement>(null);
+  const trigger = useRef<ScrollTrigger | null>(null);
   const [active, setActive] = useState(0);
-  const palette = usePalette();
-  const view = views[active];
+  // Pinned by default (the common case, and what the server renders); only
+  // reduced motion falls back to a plain stacked section.
+  const [pinned, setPinned] = useState(true);
 
-  // slide the tab indicator under the active tab
   useEffect(() => {
-    const move = () => {
-      const t = tabs.current[active];
-      const ind = indicator.current;
-      if (!t || !ind) return;
-      ind.style.width = `${t.offsetWidth}px`;
-      ind.style.transform = `translateX(${t.offsetLeft - 4}px)`;
-    };
-    move();
-    window.addEventListener("resize", move);
-    return () => window.removeEventListener("resize", move);
-  }, [active]);
-
-  useGSAP(
-    () => {
-      // the headline changes width with the view
-      gsap.to(".about-name", { "--wdth": view.wdth, duration: 1, ease: "expo.out" });
-    },
-    { scope: root, dependencies: [view.wdth] },
-  );
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) setPinned(false);
+  }, []);
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px)", () => {
-        // the screen opens up as it arrives, like an app window
-        gsap.fromTo(
-          ".about-screen",
-          { scale: 0.92, borderRadius: 64 },
-          {
-            scale: 1,
-            borderRadius: 32,
-            ease: "none",
-            scrollTrigger: { trigger: ".about-screen", start: "top bottom", end: "top 25%", scrub: true },
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        trigger.current = ScrollTrigger.create({
+          trigger: root.current,
+          start: "top top",
+          end: "+=200%",
+          pin: true,
+          anticipatePin: 1,
+          snap: {
+            snapTo: [0, 0.5, 1],
+            // nearest chapter, not "next in the scroll direction", so a fast
+            // scroll into the section never skips the first one
+            directional: false,
+            duration: { min: 0.25, max: 0.6 },
+            delay: 0.08,
+            ease: "power2.inOut",
           },
-        );
+          onUpdate: (self) => {
+            const i = self.progress < 1 / 3 ? 0 : self.progress < 2 / 3 ? 1 : 2;
+            setActive((a) => (a === i ? a : i));
+            if (bar.current) bar.current.style.transform = `scaleY(${self.progress})`;
+          },
+        });
+        return () => {
+          trigger.current = null;
+        };
       });
     },
     { scope: root },
   );
 
-  const onKey = (e: React.KeyboardEvent) => {
-    const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!dir) return;
-    e.preventDefault();
-    const next = (active + dir + views.length) % views.length;
-    setActive(next);
-    tabs.current[next]?.focus();
+  const go = (i: number) => {
+    const st = trigger.current;
+    if (!st) return setActive(i);
+    const y = st.start + (st.end - st.start) * (i / 2);
+    window.scrollTo({ top: y + 2, behavior: "smooth" });
   };
 
+  const state = (i: number) => (i === active ? "on" : i < active ? "past" : "next");
+
   return (
-    <section ref={root} id="about" aria-labelledby="about-title" className="bg-chalk px-3 py-24 sm:px-6 md:py-36">
-      <div className="about-screen mx-auto grid max-w-[1400px] overflow-hidden rounded-[32px] bg-ink text-chalk md:min-h-[min(780px,90svh)] md:grid-cols-12">
+    <section
+      ref={root}
+      id="about"
+      aria-labelledby="about-title"
+      className={`about relative bg-ink text-chalk ${pinned ? "h-[100svh] min-h-[640px] overflow-hidden" : "py-24"}`}
+    >
+      {/* giant chapter words */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        {chapters.map((c, i) => (
+          <span
+            key={c.word}
+            data-state={state(i)}
+            className="about-word display absolute whitespace-nowrap text-[26vw] uppercase leading-none md:text-[21vw]"
+          >
+            {c.word}
+          </span>
+        ))}
+      </div>
+
+      <div className="relative mx-auto grid h-full max-w-[1400px] grid-rows-[auto_1fr] gap-4 px-4 pb-6 pt-20 sm:px-6 md:grid-cols-12 md:grid-rows-1 md:items-center md:gap-8 md:pb-10 md:pt-24">
         {/* portrait */}
-        <div className="about-stage relative h-[440px] overflow-hidden sm:h-[540px] md:col-span-5 md:h-auto">
-          <div className="absolute bottom-0 left-1/2 h-[92%] -translate-x-1/2">
-            <Portrait
-              luma="/portraits/about-luma.webp"
-              color="/portraits/about-color.webp"
-              tone="/portraits/about-tone.webp"
-              width={956}
-              height={1416}
-              mode={view.mode}
-              alt={`Painted portrait of ${site.name} seen from behind, glancing back over one shoulder`}
-              sizes="(min-width: 768px) 36vw, 90vw"
-              className="h-full"
-            />
-          </div>
-          <p className="absolute inset-x-5 bottom-4 text-sm text-chalk/80">
-            <Decoded text={view.portrait(palette.name)} />
+        <div className="relative mx-auto h-[38svh] md:order-2 md:col-span-5 md:col-start-5 md:h-[74svh]">
+          <div className="about-glow absolute inset-[-10%] rounded-full" aria-hidden />
+          <Portrait
+            luma="/portraits/about-luma.webp"
+            color="/portraits/about-color.webp"
+            tone="/portraits/about-tone.webp"
+            width={956}
+            height={1416}
+            mode={chapters[active].mode}
+            alt={`Painted portrait of ${site.name} seen from behind, glancing back over one shoulder`}
+            sizes="(min-width: 768px) 36vw, 60vw"
+            className="h-full"
+          />
+          <p className="absolute inset-x-0 -bottom-6 hidden text-center text-sm text-chalk-muted md:block">
+            {chapters[active].caption}
           </p>
         </div>
 
-        {/* profile */}
-        <div className="flex flex-col p-6 sm:p-10 md:col-span-7 md:p-14">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div
-              role="tablist"
-              aria-label="View the profile as"
-              onKeyDown={onKey}
-              className="relative flex rounded-full bg-chalk/10 p-1 text-sm"
-            >
-              <span
-                ref={indicator}
-                aria-hidden
-                className="absolute left-1 top-1 h-[calc(100%-8px)] rounded-full bg-chalk transition-[transform,width] duration-500 ease-[var(--ease-out-expo)]"
-              />
-              {views.map((v, i) => (
-                <button
-                  key={v.id}
-                  ref={(el) => {
-                    tabs.current[i] = el;
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`about-tab-${v.id}`}
-                  aria-selected={i === active}
-                  aria-controls="about-panel"
-                  tabIndex={i === active ? 0 : -1}
-                  onClick={() => setActive(i)}
-                  className={`relative rounded-full px-4 py-2 font-medium transition-colors duration-300 sm:px-5 ${
-                    i === active ? "text-ink" : "text-chalk/75 hover:text-chalk"
-                  }`}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-sm text-chalk-muted">Switch the view. The portrait changes with it.</p>
-          </div>
-
-          <div
-            id="about-panel"
-            role="tabpanel"
-            aria-labelledby={`about-tab-${view.id}`}
-            className="mt-12 flex flex-1 flex-col md:mt-16"
-          >
-            <h2 id="about-title" className="about-name display text-[clamp(3.5rem,8.5vw,8rem)] uppercase [--wdth:150]">
-              I’m Essa.
-            </h2>
-            <p className="mt-8 min-h-[5.5em] max-w-[44ch] text-xl leading-snug sm:text-2xl">
-              <Decoded text={view.text} />
-            </p>
-
-            <dl className="mt-10 grid gap-6 border-t border-chalk/15 pt-6 sm:grid-cols-3 md:mt-auto">
-              {view.facts.map(([term, detail], i) => (
-                <div key={i}>
-                  <dt className="text-sm text-chalk-muted">
-                    <Decoded text={term} />
-                  </dt>
-                  <dd className="mt-1.5 text-lg font-medium leading-snug">
-                    {detail === "clock" ? <AmmanClock /> : <Decoded text={detail} />}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+        {/* copy */}
+        <div className="relative md:order-1 md:col-span-4 md:self-stretch">
+          <h2 id="about-title" className="sr-only">
+            About Essa
+          </h2>
+          <p aria-hidden className="display text-3xl uppercase [--wdth:120] md:absolute md:top-0 md:text-6xl">
+            I’m Essa.
+          </p>
+          <div className="relative mt-3 min-h-[20rem] md:absolute md:inset-x-0 md:bottom-0 md:mt-0 md:min-h-[22rem]">
+            {chapters.map((c, i) => (
+              <div
+                key={c.word}
+                data-state={pinned ? state(i) : "on"}
+                aria-hidden={pinned && i !== active}
+                className={`about-copy ${pinned ? "absolute inset-x-0 bottom-0" : "mb-10"}`}
+              >
+                <p className="flex gap-3 text-sm text-chalk-muted">
+                  <span className="tabular-nums text-signal">{String(i + 1).padStart(2, "0")}</span>
+                  {c.label}
+                </p>
+                <p className="mt-2 text-[1.35rem] font-medium leading-tight sm:text-3xl md:text-[2.4rem]">{c.title}</p>
+                <p className="mt-2 max-w-[40ch] text-[15px] leading-relaxed text-chalk/80 sm:text-base md:mt-3 md:text-lg">
+                  {c.text}
+                </p>
+                <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-chalk/15 pt-4 text-sm">
+                  {c.facts.map(([k, v]) => (
+                    <div key={k}>
+                      <dt className="text-chalk-muted">{k}</dt>
+                      <dd className="mt-1 font-medium">{v === "clock" ? <AmmanClock /> : v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* chapter rail */}
+        {pinned && (
+          <nav
+            aria-label="About chapters"
+            className="absolute right-4 top-1/2 hidden -translate-y-1/2 md:right-6 md:flex md:flex-col md:items-end md:gap-6"
+          >
+            <span aria-hidden className="absolute right-[5px] top-0 h-full w-px bg-chalk/15">
+              <span ref={bar} className="block h-full w-full origin-top scale-y-0 bg-signal" />
+            </span>
+            {chapters.map((c, i) => (
+              <button
+                key={c.word}
+                type="button"
+                onClick={() => go(i)}
+                aria-current={i === active ? "step" : undefined}
+                className={`relative flex items-center gap-3 text-sm transition-colors ${
+                  i === active ? "text-chalk" : "text-chalk-muted hover:text-chalk"
+                }`}
+              >
+                {c.label}
+                <span
+                  className={`h-[11px] w-[11px] rounded-full border transition-colors ${
+                    i <= active ? "border-signal bg-signal" : "border-chalk/40 bg-ink"
+                  }`}
+                />
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </section>
   );

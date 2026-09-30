@@ -3,11 +3,11 @@
 import Image from "next/image";
 import { useRef } from "react";
 import { projects } from "@/data/projects";
-import { gsap, SplitText, useGSAP } from "@/lib/gsap";
+import { gsap, useGSAP } from "@/lib/gsap";
 import { PALETTE_EVENT } from "@/lib/palettes";
 import { currentPalette } from "@/lib/palette-client";
-import LumenDemo from "@/components/demos/LumenDemo";
-import AtlasDemo from "@/components/demos/AtlasDemo";
+import RollText from "@/components/RollText";
+import TransitionLink from "@/components/TransitionLink";
 
 type Theme = { bg: string; fg: string; muted: string };
 
@@ -15,17 +15,6 @@ type Theme = { bg: string; fg: string; muted: string };
 const inkTheme = (): Theme => {
   const p = currentPalette();
   return { bg: p.ink, fg: p.chalk, muted: p.chalkMuted };
-};
-
-const demos: Record<string, { Demo: () => React.JSX.Element; hint: string }> = {
-  lumen: {
-    Demo: LumenDemo,
-    hint: "Change a token and watch it land on every card. Switch the range, or hover a sparkline to read it.",
-  },
-  atlas: {
-    Demo: AtlasDemo,
-    hint: "Watch a research run. When Atlas stops to ask permission, the decision is yours.",
-  },
 };
 
 export default function Work() {
@@ -105,28 +94,6 @@ export default function Work() {
         });
       });
 
-      mm.add("(prefers-reduced-motion: no-preference) and (pointer: fine)", () => {
-        // Titles widen letter by letter on hover — a wave, not a snap.
-        const splits = q(".project-title").map((el: HTMLElement) => {
-          const s = SplitText.create(el, { type: "chars", charsClass: "char" });
-          const link = el.closest(".project")!;
-          const widen = (w: number) =>
-            gsap.to(s.chars, { "--wdth": w, duration: 0.8, ease: "expo.out", stagger: 0.035, overwrite: true });
-          const on = () => widen(150);
-          const off = () => widen(70);
-          link.addEventListener("pointerenter", on);
-          link.addEventListener("pointerleave", off);
-          return { s, link, on, off };
-        });
-
-        return () =>
-          splits.forEach(({ s, link, on, off }) => {
-            link.removeEventListener("pointerenter", on);
-            link.removeEventListener("pointerleave", off);
-            s.revert();
-          });
-      });
-
       // pointer tilt on the covers (fine pointers only)
       mm.add("(pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
         const cleanups = q(".cover-tilt").map((el: HTMLElement) => {
@@ -178,20 +145,27 @@ export default function Work() {
             Work
           </h2>
           <p className="max-w-[36ch] pb-2 text-lg leading-snug text-[var(--muted)]">
-            Two recent product designs, each built on its own design system in Figma. Each one comes with a working
-            piece you can play with.
+            Two recent product designs, each built on its own design system in Figma. Every case study has its flow, its
+            system and a working piece you can play with.
           </p>
         </div>
 
         <ol className="mt-16 md:mt-24">
           {projects.map((p) => {
-            const demo = demos[p.slug];
+            const link = {
+              href: `/work/${p.slug}`,
+              color: p.theme.bg,
+              fg: p.theme.fg,
+              label: p.title,
+            };
             return (
-              <li key={p.slug} className="project grid gap-8 py-14 md:grid-cols-12 md:gap-8 md:py-24">
+              <li key={p.slug} className="project roll-host grid gap-8 py-14 md:grid-cols-12 md:gap-8 md:py-24">
                 <div className="md:col-span-4 md:flex md:flex-col md:justify-between md:py-2">
                   <div>
-                    <h3 className="project-title display text-[clamp(4rem,9vw,9rem)] uppercase [--wdth:70]">
-                      {p.title}
+                    <h3 className="project-title display text-[clamp(4rem,9vw,9rem)] uppercase leading-[0.85] [--wdth:70]">
+                      <TransitionLink {...link} className="block">
+                        <RollText text={p.title} />
+                      </TransitionLink>
                     </h3>
                     <p className="mt-5 text-2xl font-medium leading-tight">{p.summary}</p>
                     <p className="mt-5 max-w-[46ch] leading-relaxed text-[var(--muted)]">{p.description}</p>
@@ -215,39 +189,28 @@ export default function Work() {
                         </li>
                       ))}
                     </ul>
-                    <a
-                      href={p.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group mt-8 inline-flex items-center gap-3 font-medium"
+                    <TransitionLink
+                      {...link}
+                      className="group mt-8 inline-flex items-center gap-3 rounded-full bg-[var(--fg)] py-3 pl-6 pr-3 font-medium text-[var(--bg)] transition-transform duration-300 hover:scale-[1.03]"
                     >
-                      <span className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-left-bottom bg-no-repeat pb-0.5 transition-[background-size] duration-500 ease-[var(--ease-out-expo)] group-hover:bg-[length:100%_1px]">
-                        Open the {p.title} file in Figma
+                      Read the case study
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--bg)] text-[var(--fg)] transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:rotate-[-45deg]">
+                        <svg aria-hidden width="14" height="14" viewBox="0 0 14 14">
+                          <path d="M3 7h8M7.5 3.5 11 7l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                        </svg>
                       </span>
-                      <svg
-                        aria-hidden
-                        width="14"
-                        height="14"
-                        viewBox="0 0 14 14"
-                        className="transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                      >
-                        <path d="M3 11 11 3M4.5 3H11v6.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                      </svg>
-                      <span className="sr-only">(opens in a new tab)</span>
-                    </a>
+                    </TransitionLink>
                   </div>
                 </div>
 
-                <a
-                  href={p.href}
-                  target="_blank"
-                  rel="noreferrer"
+                <TransitionLink
+                  {...link}
                   tabIndex={-1}
                   aria-hidden
-                  data-cursor="Open in Figma"
+                  data-cursor="View case"
                   className="block [perspective:1400px] md:col-span-8"
                 >
-                  <div className="cover-tilt md:will-change-transform [transform-style:preserve-3d]">
+                  <div className="cover-tilt [transform-style:preserve-3d] md:will-change-transform">
                     <div className="cover-frame relative overflow-hidden rounded-[20px] md:shadow-[0_40px_80px_-40px_rgba(4,7,30,0.6)]">
                       <Image
                         src={p.cover.src}
@@ -259,17 +222,7 @@ export default function Work() {
                       />
                     </div>
                   </div>
-                </a>
-
-                {demo && (
-                  <div className="mt-6 md:col-span-12 md:mt-10">
-                    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-lg font-medium">Try a piece of {p.title}</p>
-                      <p className="max-w-[60ch] text-sm text-[var(--muted)]">{demo.hint}</p>
-                    </div>
-                    <demo.Demo />
-                  </div>
-                )}
+                </TransitionLink>
               </li>
             );
           })}

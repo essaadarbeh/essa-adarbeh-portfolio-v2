@@ -102,6 +102,48 @@ export default function Toolkit() {
     window.setTimeout(() => setPressed((p) => (p === "space" ? null : p)), 140);
   }, [press]);
 
+  // ── the tour: the keyboard plays itself until someone touches it ──────
+  const [touring, setTouring] = useState(true);
+  const touringRef = useRef(true);
+  const stopTour = useCallback(() => {
+    touringRef.current = false;
+    setTouring(false);
+  }, []);
+  const userPress = useCallback(
+    (k: string) => {
+      stopTour();
+      press(k);
+    },
+    [press, stopTour],
+  );
+
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      stopTour();
+      return;
+    }
+    const TOUR = ["F", "D", "T", "R", "N", "G", "J", "A", "V", "C", "O"];
+    let i = 0;
+    let timer = 0;
+    const tick = () => {
+      if (!touringRef.current) return;
+      press(TOUR[i++ % TOUR.length]);
+      timer = window.setTimeout(tick, 2200);
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        window.clearTimeout(timer);
+        if (e.isIntersecting && touringRef.current) timer = window.setTimeout(tick, 600);
+      },
+      { threshold: 0.45 },
+    );
+    io.observe(root.current!);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [press, stopTour]);
+
   // type on a real keyboard while the section is on screen
   useEffect(() => {
     const el = root.current!;
@@ -115,11 +157,13 @@ export default function Toolkit() {
       const k = e.key.toUpperCase();
       const onPage = t === document.body || t === document.documentElement;
       if (k.length === 1 && tools[k]) {
-        press(k);
+        userPress(k);
       } else if (e.key === " " && onPage) {
         e.preventDefault();
+        stopTour();
         shuffle();
       } else if (e.key === "Escape") {
+        stopTour();
         setLetter(null);
         setFilter(null);
       } else if (e.key === "Enter" && onPage && letterRef.current === "O") {
@@ -131,7 +175,7 @@ export default function Toolkit() {
       io.disconnect();
       window.removeEventListener("keydown", onKey);
     };
-  }, [press, shuffle]);
+  }, [userPress, shuffle, stopTour]);
 
   return (
     <section
@@ -151,7 +195,19 @@ export default function Toolkit() {
         </div>
 
         <div className="mt-12 md:mt-16">
-          <Screen letter={letter} filter={filter} />
+          <div className="relative">
+            <Screen letter={letter} filter={filter} />
+            {touring && (
+              <button
+                type="button"
+                onClick={stopTour}
+                className="mt-3 flex items-center gap-2 rounded-full sm:absolute sm:right-6 sm:top-6 sm:mt-0 bg-chalk/10 px-3 py-1.5 text-xs font-medium text-chalk ring-1 ring-chalk/20 transition-colors hover:bg-chalk/20"
+              >
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-signal" />
+                Playing a tour. Press any key to take over
+              </button>
+            )}
+          </div>
 
           {/* keyboard deck */}
           <div className="kb-deck mt-4 rounded-[26px] p-2.5 sm:mt-5 sm:p-4">
@@ -169,7 +225,7 @@ export default function Toolkit() {
                       <button
                         key={k}
                         type="button"
-                        onClick={() => press(k)}
+                        onClick={() => userPress(k)}
                         aria-label={`${k}: ${t.name}`}
                         aria-pressed={letter === k}
                         data-pressed={pressed === k || undefined}
@@ -200,6 +256,7 @@ export default function Toolkit() {
                     type="button"
                     aria-pressed={filter === c.id}
                     onClick={() => {
+                      stopTour();
                       setLetter(null);
                       setFilter((f) => (f === c.id ? null : c.id));
                     }}
@@ -212,7 +269,10 @@ export default function Toolkit() {
                 ))}
                 <button
                   type="button"
-                  onClick={shuffle}
+                  onClick={() => {
+                    stopTour();
+                    shuffle();
+                  }}
                   data-pressed={pressed === "space" || undefined}
                   className="keycap hidden h-14 flex-[2.2] items-center justify-center text-sm font-semibold sm:flex"
                 >
@@ -221,14 +281,37 @@ export default function Toolkit() {
               </div>
             </div>
           </div>
-          <p className="mt-4 text-center text-sm text-chalk-muted">
-            <span className="[@media(pointer:coarse)]:hidden">
-              Type a letter, press Space to shuffle, Esc to clear. The bottom row groups the tools by kind.
-            </span>
-            <span className="hidden [@media(pointer:coarse)]:inline">
-              Tap a key. The bottom row groups the tools by kind.
-            </span>
-          </p>
+          {/* the whole toolkit at a glance, for anyone who won't press keys */}
+          <div className="mt-10 grid gap-6 border-t border-chalk/15 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+            {categories
+              .filter((c) => c.id !== "human")
+              .map((c) => (
+                <div key={c.id}>
+                  <p className="flex items-center gap-2 text-sm text-chalk-muted">
+                    <span className={`h-2 w-2 rounded-full ${dot[c.id]}`} />
+                    {c.label}
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {Object.entries(tools)
+                      .filter(([, t]) => t.category === c.id)
+                      .map(([k, t]) => (
+                        <li key={k}>
+                          <button
+                            type="button"
+                            onClick={() => userPress(k)}
+                            aria-pressed={letter === k}
+                            className={`rounded-full px-3 py-1.5 text-sm ring-1 transition-colors ${
+                              letter === k ? "bg-chalk text-ink ring-chalk" : "ring-chalk/20 hover:ring-chalk/60"
+                            }`}
+                          >
+                            {t.name}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     </section>

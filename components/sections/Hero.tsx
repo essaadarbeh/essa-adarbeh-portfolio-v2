@@ -1,13 +1,39 @@
 "use client";
 
-import { useRef } from "react";
-import Portrait from "@/components/Portrait";
-import { nextPalette } from "@/lib/palette-client";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import ParticlePortrait from "@/components/ParticlePortrait";
+import { useDecode } from "@/components/useDecode";
 import { site } from "@/data/site";
 import { gsap, SplitText, useGSAP, INTRO_DONE } from "@/lib/gsap";
 
+const ROLES = ["interfaces", "design systems", "product UI", "motion"];
+
+/** "I design ___ and build them myself", with the blank decoding through roles. */
+function RoleLine() {
+  const [i, setI] = useState(0);
+  const ref = useDecode<HTMLSpanElement>(ROLES[i], 650);
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => setI((n) => (n + 1) % ROLES.length), 2600);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <>
+      I design{" "}
+      <span className="relative inline-block min-w-[9.5ch] text-chalk">
+        <span className="sr-only">interfaces, design systems, product UI and motion</span>
+        <span aria-hidden ref={ref} />
+        <span aria-hidden className="absolute -bottom-0.5 left-0 h-px w-full bg-signal/70" />
+      </span>{" "}
+      and build them myself.
+    </>
+  );
+}
+
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -18,8 +44,8 @@ export default function Hero() {
         const wide = matchMedia("(min-width: 768px) and (pointer: fine)").matches;
         let split: SplitText | undefined;
 
-        // The one orchestrated moment: letters rise and stretch from narrow
-        // to wide while the portrait develops in behind them.
+        // The one orchestrated moment: letters rise (and on desktop stretch
+        // from narrow to wide) while the particles gather into the portrait.
         document.fonts.ready.then(() => {
           split = SplitText.create(q(".hero-line"), { type: "lines,words,chars", charsClass: "char", mask: "lines" });
           const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
@@ -31,8 +57,8 @@ export default function Hero() {
             stagger: { each: 0.045, from: "start" },
             onComplete: () => gsap.set(split!.chars, { clearProps: "--wdth" }),
           })
-            .from(q("[data-hero-fade]"), { autoAlpha: 0, y: 16, duration: 1.1, stagger: 0.08 }, 0.7)
-            .from(document.querySelector("header"), { yPercent: -140, duration: 1.1 }, 0.9);
+            .from(q("[data-hero-fade]"), { autoAlpha: 0, y: 16, duration: 1.1, stagger: 0.08 }, 0.9)
+            .from(document.querySelector("header"), { yPercent: -140, duration: 1.1 }, 1.1);
 
           const d = document.documentElement;
           if (d.dataset.intro !== "done") {
@@ -41,19 +67,17 @@ export default function Hero() {
           }
         });
 
-        // Scrolling away: the two lines part and the portrait sinks slower
-        // than the page. Transforms only, so it stays cheap on phones.
+        // Scrolling away: the lines part while the particles drift upward
+        // (the drift itself lives in the shader). Transforms only.
         const scrub = { trigger: root.current, start: "top top", end: "bottom top", scrub: true };
-        gsap.to(q(".hero-line-a"), { xPercent: -6, ease: "none", scrollTrigger: scrub });
-        gsap.to(q(".hero-line-b"), { xPercent: 6, ease: "none", scrollTrigger: scrub });
-        gsap.to(q(".hero-portrait"), { yPercent: 14, scale: 1.04, ease: "none", scrollTrigger: scrub });
+        gsap.to(q(".hero-line-a"), { xPercent: -8, ease: "none", scrollTrigger: scrub });
+        gsap.to(q(".hero-line-b"), { xPercent: 8, ease: "none", scrollTrigger: scrub });
         gsap.to(q(".hero-meta"), { autoAlpha: 0, y: -30, ease: "none", scrollTrigger: { ...scrub, end: "40% top" } });
 
         return () => split?.revert();
       });
 
-      // On desktop the name also compresses toward its narrowest width as you
-      // scroll. That re-lays out text every frame, so phones skip it.
+      // desktop: the name also compresses toward its narrowest width
       mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px) and (pointer: fine)", () => {
         gsap.fromTo(
           q(".hero-line"),
@@ -73,11 +97,17 @@ export default function Hero() {
     <section
       ref={root}
       id="top"
-      className="relative isolate h-[100svh] min-h-[620px] overflow-hidden bg-field text-chalk"
+      className="relative isolate h-[100svh] min-h-[620px] overflow-hidden bg-field text-chalk [touch-action:pan-y]"
     >
       <h1 className="sr-only">
         {site.name}, {site.role.toLowerCase()} in {site.location}
       </h1>
+
+      {/* soft floor light, so the particles have something to settle into */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[70%] bg-[radial-gradient(60%_60%_at_50%_100%,color-mix(in_oklab,var(--color-sky)_28%,transparent),transparent_70%)]"
+      />
 
       {/* the name sits behind the portrait */}
       <div
@@ -93,27 +123,30 @@ export default function Hero() {
         </span>
       </div>
 
+      {/* The box the painting fills. It carries the static image for no-JS
+          and no-WebGL visitors; the particles draw on the canvas above. */}
       <div
-        data-intro-hide
-        className="hero-portrait absolute bottom-0 left-1/2 z-10 h-[74svh] -translate-x-1/2 origin-bottom sm:h-[86svh]"
-        onClick={(e) => {
-          // clicking the portrait recolours the page from the click point
-          if (matchMedia("(pointer: fine)").matches) nextPalette({ x: e.clientX, y: e.clientY });
-        }}
+        ref={frame}
+        className="portrait absolute bottom-0 left-1/2 z-10 h-[74svh] -translate-x-1/2 sm:h-[86svh]"
+        style={{ aspectRatio: "729 / 1544" }}
       >
-        <Portrait
-          luma="/portraits/hero-luma.webp"
-          color="/portraits/hero-color.webp"
-          tone="/portraits/hero-tone.webp"
-          width={729}
-          height={1544}
+        <Image
+          src="/portraits/hero-tone.webp"
           alt={`Painted portrait of ${site.name} in profile, looking up`}
+          fill
           priority
-          develop
           sizes="(min-width: 640px) 42svh, 60vw"
-          className="h-full"
+          className="portrait-fallback object-contain"
         />
       </div>
+      <ParticlePortrait
+        luma="/portraits/hero-luma.webp"
+        color="/portraits/hero-color.webp"
+        width={729}
+        height={1544}
+        frame={frame}
+        stage={root}
+      />
 
       {/* keeps the bottom copy legible where the dark suit meets the edge */}
       <div
@@ -122,19 +155,18 @@ export default function Hero() {
       />
 
       <div className="hero-meta pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-6 px-4 pb-5 sm:px-6 sm:pb-7">
-        <p data-hero-fade data-intro-hide className="max-w-[31ch] text-[15px] leading-snug text-field-muted sm:text-lg">
-          <span className="text-chalk">Frontend developer and UI/UX designer in Amman.</span> I design interfaces, then
-          build them myself, so nothing gets lost in between.
+        <p data-hero-fade data-intro-hide className="max-w-[40ch] text-[15px] leading-snug text-field-muted sm:text-lg">
+          <span className="text-chalk">Frontend developer and UI/UX designer in Amman.</span> <RoleLine />
         </p>
         <p
           data-hero-fade
           data-intro-hide
-          className="hidden max-w-[34ch] items-center gap-3 text-right text-sm leading-snug text-field-muted md:flex"
+          className="hidden max-w-[30ch] items-center gap-3 text-right text-sm leading-snug text-field-muted md:flex"
         >
           <span className="[@media(pointer:coarse)]:hidden">
-            Hover over the portrait to see its original colours. Click it to try another palette.
+            Move through the portrait to see its true colours. Click to send a ripple.
           </span>
-          <span className="hidden [@media(pointer:coarse)]:inline">Touch the portrait to see its original colours</span>
+          <span className="hidden [@media(pointer:coarse)]:inline">Touch the portrait to see its true colours</span>
           <span
             aria-hidden
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1 ring-field-muted/50"

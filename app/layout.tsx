@@ -6,6 +6,7 @@ import { paletteCss, palettes, PALETTE_STORAGE_KEY } from "@/lib/palettes";
 import SmoothScroll from "@/components/SmoothScroll";
 import Cursor from "@/components/Cursor";
 import Nav from "@/components/Nav";
+import PageTransition from "@/components/PageTransition";
 
 const anybody = Anybody({
   subsets: ["latin"],
@@ -40,7 +41,7 @@ export const viewport: Viewport = {
 // the intro for reduced motion, and forces it done after 4s in case fonts or
 // scripts never arrive.
 const fields = Object.fromEntries(palettes.map((p) => [p.id, p.field]));
-const bootScript = `(function(){var d=document.documentElement;try{var p=localStorage.getItem('${PALETTE_STORAGE_KEY}');var f=${JSON.stringify(fields)};if(p&&f[p]){d.dataset.palette=p;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',f[p])}}catch(e){}d.classList.add('js');if(matchMedia('(prefers-reduced-motion: reduce)').matches)d.dataset.intro='done';setTimeout(function(){if(d.dataset.intro!=='done'){d.dataset.intro='done';dispatchEvent(new Event('intro:done'))}},4000)})()`;
+const bootScript = `(function(){var d=document.documentElement;try{if(!${site.features.palettes})throw 0;var p=localStorage.getItem('${PALETTE_STORAGE_KEY}');var f=${JSON.stringify(fields)};if(p&&f[p]){d.dataset.palette=p;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',f[p])}}catch(e){}d.classList.add('js');if(matchMedia('(prefers-reduced-motion: reduce)').matches)d.dataset.intro='done';setTimeout(function(){if(d.dataset.intro!=='done'){d.dataset.intro='done';dispatchEvent(new Event('intro:done'))}},4000)})()`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SmoothScroll>
           <Nav />
           {children}
+          <PageTransition />
         </SmoothScroll>
         <Cursor />
       </body>

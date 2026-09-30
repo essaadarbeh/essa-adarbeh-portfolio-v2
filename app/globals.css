@@ -285,3 +285,159 @@ html:not(.js) .decode-source {
 .cursor-ring[data-label="true"] .cursor-label {
   opacity: 1;
 }
+
+/* ── Letter roll (RollText) ──────────────────────────────────────────── */
+.roll {
+  display: inline-flex;
+}
+.roll-char {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  /* room for the glyphs: display type runs at a very tight line-height */
+  padding-block: 0.06em;
+  margin-block: -0.06em;
+}
+.roll-a,
+.roll-b {
+  display: block;
+  transition: transform 0.7s var(--ease-out-expo);
+  transition-delay: calc(var(--i) * 28ms);
+}
+.roll-b {
+  position: absolute;
+  inset: 0.06em 0 auto;
+  transform: translateY(110%);
+  color: transparent;
+  -webkit-text-stroke: 0.025em currentColor;
+}
+@media (hover: hover) {
+  .roll-host:hover .roll-a {
+    transform: translateY(-110%);
+  }
+  .roll-host:hover .roll-b {
+    transform: translateY(0);
+  }
+}
+
+/* ── About story ─────────────────────────────────────────────────────── */
+.about-word {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklab, var(--color-chalk) 16%, transparent);
+  --wdth: 125;
+  transition:
+    transform 1s var(--ease-out-expo),
+    opacity 0.7s ease;
+}
+.about-word[data-state="past"] {
+  opacity: 0;
+  transform: translateY(-35%) scale(0.92);
+}
+.about-word[data-state="next"] {
+  opacity: 0;
+  transform: translateY(35%) scale(0.92);
+}
+.about-copy {
+  transition:
+    transform 0.8s var(--ease-out-expo),
+    opacity 0.45s ease;
+}
+.about-copy[data-state="past"] {
+  opacity: 0;
+  transform: translateY(-24px);
+  pointer-events: none;
+}
+.about-copy[data-state="next"] {
+  opacity: 0;
+  transform: translateY(24px);
+  pointer-events: none;
+}
+.about-glow {
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-field) 55%, transparent), transparent);
+}
+
+/* ── Process story ───────────────────────────────────────────────────── */
+.stage-layer {
+  transition:
+    opacity 0.6s ease,
+    transform 0.9s var(--ease-out-expo);
+}
+.stage-layer[data-layer="past"] {
+  opacity: 0;
+  transform: scale(0.94);
+  pointer-events: none;
+}
+.stage-layer[data-layer="next"] {
+  opacity: 0;
+  transform: scale(1.05);
+  pointer-events: none;
+}
+/* notes drop in one by one when their step is on */
+.note {
+  transform: rotate(var(--rot)) translateY(-30px) scale(0.9);
+  opacity: 0;
+  transition:
+    transform 0.8s var(--ease-out-expo),
+    opacity 0.4s ease;
+}
+.note:nth-child(2) {
+  transition-delay: 0.08s;
+}
+.note:nth-child(3) {
+  transition-delay: 0.16s;
+}
+.note:nth-child(4) {
+  transition-delay: 0.24s;
+}
+[data-layer="on"] .note {
+  transform: rotate(var(--rot));
+  opacity: 1;
+}
+.sketch {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  transition: stroke-dashoffset 1.6s ease 0.3s;
+}
+[data-layer="on"] .sketch {
+  stroke-dashoffset: 0;
+}
+/* code types in line by line */
+.code-line {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.4s ease;
+  transition-delay: calc(var(--i) * 90ms + 150ms);
+}
+[data-layer="on"] .code-line {
+  opacity: 1;
+  transform: none;
+}
+/* the finished button catches the light */
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+[data-layer="on"] .shine::after {
+  animation: shine 2.8s ease-in-out 0.6s infinite;
+}
+@keyframes shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  45%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+.polish-card {
+  transition: transform 0.9s var(--ease-out-expo);
+  transform: translateY(24px);
+}
+[data-layer="on"] .polish-card {
+  transform: none;
+}

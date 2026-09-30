@@ -261,7 +261,7 @@ export default function Contact() {
                   ))}
                 </dd>
               </div>
-              <div className="col-span-2">
+              <div className={`col-span-2 ${site.features.palettes ? "" : "hidden"}`}>
                 <dt className="text-field-muted">Site palette</dt>
                 <dd className="mt-2">
                   <PaletteSwitcher labelled className="flex-wrap" />

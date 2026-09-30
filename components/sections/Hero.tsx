@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Doodle from "@/components/hand/Doodle";
-import FigmaInspect from "@/components/hand/FigmaInspect";
+import OpenMind from "@/components/hand/OpenMind";
 import { DrawScope, Mark, Written } from "@/components/hand/Marks";
 import SketchPortrait from "@/components/hand/SketchPortrait";
 import heroSketch from "@/data/sketch-hero.json";
@@ -17,8 +17,18 @@ import { gsap, INTRO_DONE, useGSAP } from "@/lib/gsap";
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
   const figure = useRef<HTMLDivElement>(null);
+  const note = useRef<HTMLDivElement>(null);
+  const tapNote = useRef<HTMLSpanElement>(null);
+  const stamp = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
   const [drew, setDrew] = useState(false);
+  // the head opens once the portrait has finished drawing and painting
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!on) return;
+    const t = window.setTimeout(() => setReady(true), 3000);
+    return () => window.clearTimeout(t);
+  }, [on]);
   const onFirstStroke = useCallback(() => setDrew(true), []);
 
   // start once fonts are in, so marks land on the words' final positions
@@ -109,7 +119,6 @@ export default function Hero() {
         <div
           ref={figure}
           data-no-ink
-          data-cursor-hide
           className="relative -mt-10 ml-auto mr-[-6vw] aspect-[425/900] h-[64svh] max-h-[640px] md:absolute md:bottom-0 md:right-[7%] md:m-0 md:h-[min(96svh,1000px)] md:max-h-none"
         >
           <SketchPortrait
@@ -124,26 +133,30 @@ export default function Hero() {
             unwashOn={root}
             className="h-full w-full"
           />
-          <FigmaInspect host={figure} ink="/portraits/hero-ink.webp" />
+          <OpenMind host={figure} color="/portraits/hero-color.webp" ready={ready} hide={[note, tapNote, stamp]} />
 
           {/* what it is, and what to do with it */}
-          <div className="pointer-events-none absolute left-[-64%] top-[11%] hidden w-[62%] flex-col items-end md:flex">
+          <div
+            ref={note}
+            className="pointer-events-none absolute left-[-64%] top-[11%] hidden w-[62%] flex-col items-end md:flex"
+          >
             <Written className="rotate-[3deg] text-right text-2xl leading-tight text-ink-muted" delay={2.7}>
               that’s me, drawn first
             </Written>
             <Written className="rotate-[3deg] text-right text-xl text-field" delay={3.1}>
-              I’m a Figma file: hover to inspect, click to stamp
+              hover my head to see what I’m thinking
             </Written>
             <Mark kind="arrow" delay={3.5} duration={0.45} className="mr-1 mt-1 h-12 w-16 text-ink-muted" width={3} />
           </div>
-          <span className="absolute left-[-34%] top-[42%] md:hidden">
+          <span ref={tapNote} className="absolute left-[-34%] top-[42%] md:hidden">
             <Written className="-rotate-6 text-xl text-field" delay={2.7}>
-              tap me
+              tap my head
             </Written>
           </span>
 
           {/* rubber stamp */}
           <div
+            ref={stamp}
             className="stamp absolute bottom-[14%] left-[-60%] z-20 rounded-[10px] border-[3px] border-field px-4 py-2 text-field md:bottom-[9%] md:left-[-68%]"
             style={{ "--r": "-9deg", "--delay": "2.9s", transform: "rotate(-9deg)" } as React.CSSProperties}
           >

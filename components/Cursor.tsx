@@ -68,8 +68,7 @@ export default function Cursor() {
         "[data-cursor], a, button, label, [role=slider], [role=tab], [role=radio], input[type=range]",
       );
       const text = target?.getAttribute("data-cursor") ?? null;
-      // stand aside over text fields, and where a component draws its own pointer
-      const overText = (e.target as Element | null)?.closest?.("input:not([type=range]), textarea, [data-cursor-hide]");
+      const overText = (e.target as Element | null)?.closest?.("input:not([type=range]), textarea");
       if (text !== lastLabel) {
         lastLabel = text;
         l.textContent = text ?? "";

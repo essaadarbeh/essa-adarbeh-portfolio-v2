@@ -6,6 +6,8 @@ import { projects } from "@/data/projects";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { PALETTE_EVENT } from "@/lib/palettes";
 import { currentPalette } from "@/lib/palette-client";
+import { DrawScope, Mark, Written } from "@/components/hand/Marks";
+import TornEdge from "@/components/hand/TornEdge";
 import RollText from "@/components/RollText";
 import TransitionLink from "@/components/TransitionLink";
 
@@ -139,16 +141,23 @@ export default function Work() {
         } as React.CSSProperties
       }
     >
+      {/* the notebook page ends here; what follows was built */}
+      <TornEdge side="top" />
       <div className="mx-auto max-w-[1400px]">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <h2 id="work-title" className="display text-[clamp(3.5rem,11vw,11rem)] uppercase [--wdth:125]">
-            Work
-          </h2>
+        <DrawScope className="flex flex-wrap items-end justify-between gap-6">
+          <span className="flex flex-wrap items-end gap-x-5">
+            <h2 id="work-title" className="display text-[clamp(3.5rem,11vw,11rem)] uppercase [--wdth:125]">
+              Work
+            </h2>
+            <Written className="-rotate-3 pb-4 text-3xl text-sky md:pb-8" delay={0.4}>
+              (two I’m proud of)
+            </Written>
+          </span>
           <p className="max-w-[36ch] pb-2 text-lg leading-snug text-[var(--muted)]">
             Two recent product designs, each built on its own design system in Figma. Every case study has its flow, its
             system and a working piece you can play with.
           </p>
-        </div>
+        </DrawScope>
 
         <ol className="mt-16 md:mt-24">
           {projects.map((p) => {
@@ -203,31 +212,52 @@ export default function Work() {
                   </div>
                 </div>
 
-                <TransitionLink
-                  {...link}
-                  tabIndex={-1}
-                  aria-hidden
-                  data-cursor="View case"
-                  className="block [perspective:1400px] md:col-span-8"
-                >
-                  <div className="cover-tilt [transform-style:preserve-3d] md:will-change-transform">
-                    <div className="cover-frame relative overflow-hidden rounded-[20px] md:shadow-[0_40px_80px_-40px_rgba(4,7,30,0.6)]">
-                      <Image
-                        src={p.cover.src}
-                        alt=""
-                        width={p.cover.width}
-                        height={p.cover.height}
-                        sizes="(min-width: 768px) 60vw, 100vw"
-                        className="h-auto w-full md:will-change-transform"
-                      />
+                <div className="relative md:col-span-8">
+                  {/* a note in the margin of the screen, in the project's own colour */}
+                  <DrawScope
+                    threshold={0.6}
+                    className="pointer-events-none relative z-10 mb-3 flex items-end gap-1 md:absolute md:-top-16 md:left-6 md:mb-0"
+                    style={{ color: p.accent } as React.CSSProperties}
+                  >
+                    <Written className="-rotate-2 text-2xl leading-tight md:text-[1.7rem]" delay={0.2}>
+                      {p.note}
+                    </Written>
+                    <Mark
+                      kind="arrow"
+                      delay={0.2 + p.note.length * 0.045}
+                      duration={0.45}
+                      className="mb-[-2.2rem] hidden h-14 w-16 md:block"
+                      width={3}
+                    />
+                  </DrawScope>
+                  <TransitionLink
+                    {...link}
+                    tabIndex={-1}
+                    aria-hidden
+                    data-cursor="View case"
+                    className="block [perspective:1400px]"
+                  >
+                    <div className="cover-tilt [transform-style:preserve-3d] md:will-change-transform">
+                      <div className="cover-frame relative overflow-hidden rounded-[20px] md:shadow-[0_40px_80px_-40px_rgba(4,7,30,0.6)]">
+                        <Image
+                          src={p.cover.src}
+                          alt=""
+                          width={p.cover.width}
+                          height={p.cover.height}
+                          sizes="(min-width: 768px) 60vw, 100vw"
+                          className="h-auto w-full md:will-change-transform"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </TransitionLink>
+                  </TransitionLink>
+                </div>
               </li>
             );
           })}
         </ol>
       </div>
+      {/* back to paper for the process */}
+      <TornEdge side="bottom" />
     </section>
   );
 }

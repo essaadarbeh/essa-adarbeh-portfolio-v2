@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DrawScope, Mark, Written } from "@/components/hand/Marks";
 import PaletteSwitcher from "@/components/PaletteSwitcher";
 import { site } from "@/data/site";
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
@@ -119,7 +120,7 @@ function Composer() {
         e.preventDefault();
         window.location.href = href;
       }}
-      className={`overflow-hidden rounded-[24px] bg-chalk text-ink md:shadow-[0_40px_80px_-40px_rgba(0,0,0,0.6)] transition-shadow duration-700 ${
+      className={`paper overflow-hidden rounded-[24px] text-ink md:shadow-[0_40px_80px_-40px_rgba(0,0,0,0.6)] transition-shadow duration-700 ${
         flash ? "ring-4 ring-signal" : ""
       }`}
     >
@@ -143,6 +144,10 @@ function Composer() {
       </p>
 
       <div className="space-y-6 p-5 sm:p-7">
+        {/* it's a letter: it starts the way the email will */}
+        <p aria-hidden className="font-hand -rotate-1 text-3xl text-field">
+          Hi Essa,
+        </p>
         <Chips label="What are we building?" options={TYPES} value={type} onChange={setType} />
         <Chips label="When?" options={WHEN} value={when} onChange={setWhen} />
         <div className="grid gap-4 sm:grid-cols-[1fr_2fr]">
@@ -230,6 +235,35 @@ export default function Contact() {
               I’m open to full-time roles and freelance projects. Tell me what you’re working on and I’ll reply within a
               day.
             </p>
+
+            {/* signed by hand */}
+            <DrawScope threshold={0.6} className="relative mt-8 flex items-end gap-6">
+              <span className="block">
+                <Written className="-rotate-2 text-2xl text-field-muted" delay={0.1}>
+                  talk soon,
+                </Written>
+                <span className="relative mt-1 block w-fit">
+                  <Written className="-rotate-3 text-6xl leading-none text-chalk" delay={0.6}>
+                    Essa
+                  </Written>
+                  <Mark
+                    kind="underline"
+                    delay={1.0}
+                    duration={0.5}
+                    className="absolute -bottom-3 -left-2 h-4 w-[130%] text-sky"
+                    width={3}
+                  />
+                </span>
+              </span>
+              <span
+                className="stamp mb-2 rounded-[8px] border-[3px] border-chalk px-3 py-1.5 text-chalk"
+                style={{ "--r": "7deg", "--delay": "1.5s", transform: "rotate(7deg)" } as React.CSSProperties}
+              >
+                <span className="display block whitespace-nowrap text-sm uppercase leading-none tracking-wide [--wdth:115] sm:text-base">
+                  Replies within a day
+                </span>
+              </span>
+            </DrawScope>
 
             <dl className="mt-10 grid grid-cols-2 gap-8 border-t border-chalk/25 pt-6 text-sm">
               <div>

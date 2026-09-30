@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DrawScope, Mark, Written } from "@/components/hand/Marks";
+import TornEdge from "@/components/hand/TornEdge";
 import { useDecode } from "@/components/useDecode";
 import { categories, keyRows, tools, type ToolCategory } from "@/data/skills";
 
@@ -182,17 +184,23 @@ export default function Toolkit() {
       ref={root}
       id="toolkit"
       aria-labelledby="toolkit-title"
-      className="bg-ink px-3 py-24 text-chalk sm:px-6 md:py-36"
+      className="relative bg-ink px-3 py-24 text-chalk sm:px-6 md:py-36"
     >
+      <TornEdge side="top" />
       <div className="mx-auto max-w-[1180px]">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <h2 id="toolkit-title" className="display text-[clamp(3rem,9vw,8rem)] uppercase [--wdth:125]">
-            Toolkit
-          </h2>
+        <DrawScope className="flex flex-wrap items-end justify-between gap-6">
+          <span className="flex flex-wrap items-end gap-x-5">
+            <h2 id="toolkit-title" className="display text-[clamp(3rem,9vw,8rem)] uppercase [--wdth:125]">
+              Toolkit
+            </h2>
+            <Written className="-rotate-3 pb-3 text-3xl text-sky md:pb-6" delay={0.4}>
+              (what’s on my desk)
+            </Written>
+          </span>
           <p className="max-w-[34ch] pb-2 text-lg leading-snug text-chalk-muted">
             What I design and build with, laid out on the thing I spend all day on.
           </p>
-        </div>
+        </DrawScope>
 
         <div className="mt-12 md:mt-16">
           <div className="relative">
@@ -209,78 +217,92 @@ export default function Toolkit() {
             )}
           </div>
 
-          {/* keyboard deck */}
-          <div className="kb-deck mt-4 rounded-[26px] p-2.5 sm:mt-5 sm:p-4">
-            <div className="space-y-1.5 sm:space-y-2.5">
-              {keyRows.map((row, r) => (
-                <div
-                  key={row}
-                  className="flex justify-center gap-1.5 sm:gap-2.5"
-                  style={{ paddingLeft: `${r * 4}%`, paddingRight: `${r * 4}%` }}
-                >
-                  {row.split("").map((k) => {
-                    const t = tools[k];
-                    const dim = filter !== null && t.category !== filter;
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => userPress(k)}
-                        aria-label={`${k}: ${t.name}`}
-                        aria-pressed={letter === k}
-                        data-pressed={pressed === k || undefined}
-                        data-active={letter === k || (filter !== null && !dim) || undefined}
-                        data-dim={dim || undefined}
-                        className="keycap relative flex aspect-square min-w-0 flex-1 flex-col justify-between p-1.5 text-left sm:aspect-[1/0.92] sm:p-2.5 md:max-w-[104px]"
-                      >
-                        <span className="flex h-full items-center justify-center sm:h-auto sm:items-start sm:justify-between">
-                          <span className="text-[13px] font-semibold leading-none sm:text-base">{k}</span>
-                          <span
-                            className={`absolute right-1 top-1 h-1 w-1 rounded-full sm:static sm:h-2 sm:w-2 ${dot[t.category]}`}
-                          />
-                        </span>
-                        <span className="hidden text-[11px] font-medium leading-tight opacity-80 md:block">
-                          {t.name}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+          {/* keyboard deck, with a label scribbled on it */}
+          <DrawScope threshold={0.5} className="relative">
+            <span className="pointer-events-none absolute -top-9 right-4 z-10 hidden items-start gap-1 sm:flex md:-top-11 md:right-10">
+              <Mark
+                kind="arrowLeft"
+                delay={0.3}
+                duration={0.45}
+                className="mt-3 h-12 w-16 -scale-y-100 text-signal"
+                width={3}
+              />
+              <Written className="rotate-[4deg] text-2xl text-signal" delay={0.7}>
+                no need to type, it plays itself. or take over
+              </Written>
+            </span>
+            <div className="kb-deck mt-4 rounded-[26px] p-2.5 sm:mt-5 sm:p-4">
+              <div className="space-y-1.5 sm:space-y-2.5">
+                {keyRows.map((row, r) => (
+                  <div
+                    key={row}
+                    className="flex justify-center gap-1.5 sm:gap-2.5"
+                    style={{ paddingLeft: `${r * 4}%`, paddingRight: `${r * 4}%` }}
+                  >
+                    {row.split("").map((k) => {
+                      const t = tools[k];
+                      const dim = filter !== null && t.category !== filter;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => userPress(k)}
+                          aria-label={`${k}: ${t.name}`}
+                          aria-pressed={letter === k}
+                          data-pressed={pressed === k || undefined}
+                          data-active={letter === k || (filter !== null && !dim) || undefined}
+                          data-dim={dim || undefined}
+                          className="keycap relative flex aspect-square min-w-0 flex-1 flex-col justify-between p-1.5 text-left sm:aspect-[1/0.92] sm:p-2.5 md:max-w-[104px]"
+                        >
+                          <span className="flex h-full items-center justify-center sm:h-auto sm:items-start sm:justify-between">
+                            <span className="text-[13px] font-semibold leading-none sm:text-base">{k}</span>
+                            <span
+                              className={`absolute right-1 top-1 h-1 w-1 rounded-full sm:static sm:h-2 sm:w-2 ${dot[t.category]}`}
+                            />
+                          </span>
+                          <span className="hidden text-[11px] font-medium leading-tight opacity-80 md:block">
+                            {t.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
 
-              {/* category keys + space */}
-              <div className="flex gap-1.5 sm:gap-2.5">
-                {categories.map((c) => (
+                {/* category keys + space */}
+                <div className="flex gap-1.5 sm:gap-2.5">
+                  {categories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={filter === c.id}
+                      onClick={() => {
+                        stopTour();
+                        setLetter(null);
+                        setFilter((f) => (f === c.id ? null : c.id));
+                      }}
+                      data-active={filter === c.id || undefined}
+                      className="keycap flex h-11 min-w-0 flex-1 items-center justify-center gap-2 px-1 text-[11px] font-semibold sm:h-14 sm:text-sm"
+                    >
+                      <span className={`hidden h-2 w-2 shrink-0 rounded-full sm:block ${dot[c.id]}`} />
+                      {c.label}
+                    </button>
+                  ))}
                   <button
-                    key={c.id}
                     type="button"
-                    aria-pressed={filter === c.id}
                     onClick={() => {
                       stopTour();
-                      setLetter(null);
-                      setFilter((f) => (f === c.id ? null : c.id));
+                      shuffle();
                     }}
-                    data-active={filter === c.id || undefined}
-                    className="keycap flex h-11 min-w-0 flex-1 items-center justify-center gap-2 px-1 text-[11px] font-semibold sm:h-14 sm:text-sm"
+                    data-pressed={pressed === "space" || undefined}
+                    className="keycap hidden h-14 flex-[2.2] items-center justify-center text-sm font-semibold sm:flex"
                   >
-                    <span className={`hidden h-2 w-2 shrink-0 rounded-full sm:block ${dot[c.id]}`} />
-                    {c.label}
+                    Shuffle
                   </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    stopTour();
-                    shuffle();
-                  }}
-                  data-pressed={pressed === "space" || undefined}
-                  className="keycap hidden h-14 flex-[2.2] items-center justify-center text-sm font-semibold sm:flex"
-                >
-                  Shuffle
-                </button>
+                </div>
               </div>
             </div>
-          </div>
+          </DrawScope>
           {/* the whole toolkit at a glance, for anyone who won't press keys */}
           <div className="mt-10 grid gap-6 border-t border-chalk/15 pt-8 sm:grid-cols-2 lg:grid-cols-4">
             {categories

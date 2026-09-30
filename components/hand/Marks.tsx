@@ -40,9 +40,11 @@ type MarkProps = {
   delay?: number;
   duration?: number;
   width?: number;
+  /** Draw on mount instead of waiting for a scope: remount (new key) to redraw. */
+  now?: boolean;
 };
 
-export function Mark({ kind, className, delay = 0, duration = 0.7, width = 2 }: MarkProps) {
+export function Mark({ kind, className, delay = 0, duration = 0.7, width = 2, now }: MarkProps) {
   const paths = PATHS[kind];
   return (
     <svg
@@ -57,7 +59,7 @@ export function Mark({ kind, className, delay = 0, duration = 0.7, width = 2 }: 
           key={i}
           d={d}
           pathLength={1}
-          className="ink-path"
+          className={now ? "ink-now" : "ink-path"}
           stroke="currentColor"
           strokeWidth={width}
           strokeLinecap="round"

@@ -49,8 +49,8 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 ## Sections
 
 - **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through; on phones a tap swaps sketch and painting. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
-- **About.** A desk of real objects you can pick up and move: the photo, an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones it's a tidy stack that scrolls normally.
-- **Work.** Lumen and Atlas, with titles that roll letter by letter on hover (transform-only). Every project opens its own case study with a page transition in that project's colour.
+- **About.** Essa again, turned around this time: the back-view painting is drawn and painted the same way as the hero once the desk scrolls into view. Around the figure is a desk of objects you can pick up and move: an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones the desk becomes a row of cards you swipe through.
+- **Work.** The notebook page tears off here (`components/hand/TornEdge.tsx`) and the screens begin. Lumen and Atlas have titles that roll letter by letter on hover (transform-only), and a note scribbled over each cover in the project's own colour. Every project opens its own case study with a page transition in that project's colour.
 - **Case studies** (`/work/lumen`, `/work/atlas`):
   - the brief and approach
   - an interactive user flow (it draws as you scroll, and each step explains itself; Atlas includes the "deny" branch)
@@ -58,24 +58,26 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
   - the system in numbers, plus a component inventory with every variant
   - the live demo
   - a reflection, and a link to the next case
-- **Process.** The design-file compare slider, then a pinned scene where one contact card evolves through the four steps: sticky-note questions, a redlined wireframe, code writing itself, then the finished, working card.
-- **Toolkit.** A working keyboard with one tool per key. It plays a short tour by itself until someone interacts, and a grouped index below lists every tool at a glance.
-- **Contact.** A composer that builds the email and opens it in your mail app. It also has copy-to-clipboard and live Amman time.
+- **Process.** Back on paper. The pen circles "design" and underlines "code" in the heading, the same way it marks up the hero. Then comes the design-file compare slider, then a pinned scene where one contact card evolves through the four steps: sticky-note questions, a redlined wireframe, code writing itself, then the finished, working card. The pen circles the step you're on and ticks off the ones behind you.
+- **Toolkit.** A working keyboard with one tool per key, with a note scribbled on it: it plays a short tour by itself until someone takes over. A grouped index below lists every tool at a glance.
+- **Contact.** A letter. The composer starts "Hi Essa,", the way the email will, and the left column is signed by hand with a "Replies within a day" stamp. It builds the email and opens it in your mail app, and also has copy-to-clipboard and live Amman time.
 
 ## Performance
 
-These were measured on a phone-sized viewport with the CPU slowed 4×, in headless Chrome:
+Measured on a phone-sized viewport with the CPU slowed 4×, in headless Chrome (software rendering, which exaggerates paint costs):
 
-- the median frame takes 16.7 ms (60 fps) while scrolling the whole page, and 95% of frames finish within 33 ms
-- Toolkit and Contact scroll with no slow frames at all
+- first contentful paint at 0.6–1.0 s, total blocking time around 200 ms
+- the median frame takes 16.7 ms (60 fps) while scrolling the whole page; roughly 9–12% of frames take longer than 33 ms, mostly in About (the desk landing) and the pinned Process scene
 
 Choices that got it there:
 
 - Native scrolling on touch screens.
+- On phones, the portraits skip the SVG masks and displacement filters: the pen still draws the line, then the sketch and the paint fade in as plain images (compositor-only opacity).
+- The paper texture is left off the pinned Process scene on phones, where a pinned layer with a tiled background repaints while it scrolls.
 - On phones, no section-wide colour fades and no letter-width animation (both force repaint or re-layout every frame).
 - The compare slider moves by transforms only.
 - Each section hydrates as its own Suspense boundary.
-- No WebGL: the hand-made hero is SVG and CSS, and the doodle canvas only draws while you draw.
+- No WebGL: the hand-made layer is SVG and CSS, and the doodle canvas only draws while you draw.
 - Covers are served as WebP, which decodes faster than AVIF on phones.
 
 ## Accessibility

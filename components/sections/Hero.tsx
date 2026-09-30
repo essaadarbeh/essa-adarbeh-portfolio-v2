@@ -117,6 +117,7 @@ export default function Hero() {
             alt={`${site.name}, drawn in ink and painted, in profile and looking up`}
             focus={[110, 240]}
             play={on}
+            priority
             unwashOn={root}
             className="h-full w-full"
           />

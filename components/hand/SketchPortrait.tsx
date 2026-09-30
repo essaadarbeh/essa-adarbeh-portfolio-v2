@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 
@@ -19,6 +19,8 @@ type Props = {
   unwashOn?: React.RefObject<HTMLElement | null>;
   /** Hold the finished state (no drawing), e.g. when it starts off-screen. */
   instant?: boolean;
+  /** Above the fold: fetch both images early. */
+  priority?: boolean;
   className?: string;
 };
 
@@ -30,10 +32,28 @@ type Props = {
  * Afterwards the pointer works as an eraser: under it the paint lifts off and
  * the sketch shows through, the design under the build. On touch, a tap
  * swaps between sketch and painting. All SVG, no WebGL.
+ *
+ * Phones get a lighter version of the same thing: the pen still draws the
+ * line, then the sketch and the paint fade in as plain images. Masks and
+ * displacement filters repaint every frame, which a phone feels.
  */
-export default function SketchPortrait({ sketch, color, ink, alt, focus, play, unwashOn, instant, className }: Props) {
-  preload(color, { as: "image", fetchPriority: "high" });
-  preload(ink, { as: "image", fetchPriority: "high" });
+const LITE = "(max-width: 767px), (pointer: coarse)";
+export default function SketchPortrait({
+  sketch,
+  color,
+  ink,
+  alt,
+  focus,
+  play,
+  unwashOn,
+  instant,
+  priority,
+  className,
+}: Props) {
+  if (priority) {
+    preload(color, { as: "image", fetchPriority: "high" });
+    preload(ink, { as: "image", fetchPriority: "high" });
+  }
 
   const id = useId().replace(/:/g, "");
   const svg = useRef<SVGSVGElement>(null);
@@ -41,20 +61,27 @@ export default function SketchPortrait({ sketch, color, ink, alt, focus, play, u
   const eraser = useRef<SVGCircleElement>(null);
   const inkFill = useRef<SVGRectElement>(null);
   const pen = useRef<SVGGElement>(null);
+  const inkImg = useRef<HTMLImageElement>(null);
+  const colorImg = useRef<HTMLImageElement>(null);
   const done = useRef(false);
+  const [lite, setLite] = useState<boolean | null>(null);
+  useEffect(() => setLite(matchMedia(LITE).matches), []);
   const { width: w, height: h } = sketch;
   const full = Math.hypot(w, h);
 
   // the drawing itself
   useEffect(() => {
-    if (!play) return;
+    if (!play || lite === null) return;
     const root = svg.current!;
     const outline = [...root.querySelectorAll<SVGPathElement>(".sp-outline")];
     const brush = root.querySelectorAll<SVGPathElement>(".sp-brush");
     if (instant || matchMedia("(prefers-reduced-motion: reduce)").matches) {
       gsap.set([...outline, ...brush], { strokeDashoffset: 0 });
-      gsap.set(inkFill.current, { opacity: 1 });
-      gsap.set(wash.current, { attr: { r: full } });
+      if (lite) gsap.set([inkImg.current, colorImg.current], { opacity: 1 });
+      else {
+        gsap.set(inkFill.current, { opacity: 1 });
+        gsap.set(wash.current, { attr: { r: full } });
+      }
       done.current = true;
       return;
     }
@@ -73,18 +100,36 @@ export default function SketchPortrait({ sketch, color, ink, alt, focus, play, u
     tl.to(pen.current, { opacity: 1, duration: 0.25 }, 0)
       .to(outline, { strokeDashoffset: 0, duration: 2, ease: "power1.inOut" }, 0)
       .to(tip, { p: 1, duration: 2, ease: "power1.inOut", onUpdate: placePen }, 0)
-      .to(pen.current, { opacity: 0, y: -30, duration: 0.4, ease: "power2.in" }, 2)
-      .to(brush, { strokeDashoffset: 0, duration: 0.9, ease: "power1.in", stagger: 0.025 }, 0.7)
-      .to(inkFill.current, { opacity: 1, duration: 0.7 }, 1.7)
-      .to(wash.current, { attr: { r: full }, duration: 2.1, ease: "power2.inOut" }, 1.9);
+      .to(pen.current, { opacity: 0, y: -30, duration: 0.4, ease: "power2.in" }, 2);
+    if (lite)
+      tl.to(inkImg.current, { opacity: 0.9, duration: 0.9, ease: "power1.in" }, 1).to(
+        colorImg.current,
+        { opacity: 1, duration: 1.3, ease: "power2.inOut" },
+        2,
+      );
+    else
+      tl.to(brush, { strokeDashoffset: 0, duration: 0.9, ease: "power1.in", stagger: 0.025 }, 0.7)
+        .to(inkFill.current, { opacity: 1, duration: 0.7 }, 1.7)
+        .to(wash.current, { attr: { r: full }, duration: 2.1, ease: "power2.inOut" }, 1.9);
     return () => {
       tl.kill();
     };
-  }, [play, instant, full]);
+  }, [play, instant, full, lite]);
 
   // eraser (fine pointers) and tap-to-swap (touch)
   useEffect(() => {
+    if (lite === null) return;
     const root = svg.current!;
+    if (lite) {
+      let painted = true;
+      const tap = () => {
+        if (!done.current) return;
+        painted = !painted;
+        gsap.to(colorImg.current, { opacity: painted ? 1 : 0, duration: 0.8, ease: "power2.inOut" });
+      };
+      root.addEventListener("click", tap);
+      return () => root.removeEventListener("click", tap);
+    }
     const fine = matchMedia("(pointer: fine)").matches;
     const toLocal = (e: PointerEvent) => {
       const m = root.getScreenCTM();
@@ -124,12 +169,12 @@ export default function SketchPortrait({ sketch, color, ink, alt, focus, play, u
       root.removeEventListener("pointerleave", leave);
       root.removeEventListener("click", tap);
     };
-  }, [w, full]);
+  }, [w, full, lite]);
 
   // leaving the section, the paint drains back out and the sketch stays
   useEffect(() => {
     const host = unwashOn?.current;
-    if (!host) return;
+    if (!host || lite !== false) return;
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference) and (min-width: 768px) and (pointer: fine)", () => {
       const st = ScrollTrigger.create({
@@ -144,7 +189,68 @@ export default function SketchPortrait({ sketch, color, ink, alt, focus, play, u
       return () => st.kill();
     });
     return () => mm.revert();
-  }, [unwashOn, full]);
+  }, [unwashOn, full, lite]);
+
+  // the pen's line, and the pen itself: the same on every screen
+  const drawing = (
+    <>
+      <g fill="none" stroke="var(--color-ink)" strokeLinecap="round" strokeLinejoin="round">
+        {sketch.paths
+          .filter((p) => p.k === 0)
+          .map((p, i) => (
+            <path
+              key={i}
+              d={p.d}
+              className="sp-outline"
+              pathLength={1}
+              strokeDasharray="1"
+              strokeDashoffset="1"
+              strokeWidth={2.2}
+            />
+          ))}
+      </g>
+
+      {/* the pen, a plain ballpoint, only while it draws */}
+      <g ref={pen} opacity="0" aria-hidden>
+        <g transform="rotate(32)">
+          <path d="M0 0 L-4.5 -15 L4.5 -15 Z" fill="var(--color-ink)" />
+          <path d="M-7 -15 L7 -15 L7 -40 L-7 -40 Z" fill="#cfd4e6" />
+          <rect x="-7" y="-140" width="14" height="101" rx="3" fill="var(--color-field)" />
+          <rect x="-2" y="-128" width="4" height="46" rx="2" fill="#fff" opacity="0.35" />
+          <rect x="7" y="-132" width="4" height="40" rx="2" fill="var(--color-ink)" />
+        </g>
+      </g>
+    </>
+  );
+
+  if (lite)
+    return (
+      <div role="img" aria-label={alt} className={`relative ${className ?? ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={inkImg}
+          src={ink}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain object-bottom opacity-0"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={colorImg}
+          src={color}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain object-bottom opacity-0"
+        />
+        <svg
+          ref={svg}
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="xMidYMax meet"
+          aria-hidden
+          className="absolute inset-0 h-full w-full overflow-visible"
+        >
+          {drawing}
+        </svg>
+      </div>
+    );
 
   return (
     <svg
@@ -202,32 +308,7 @@ export default function SketchPortrait({ sketch, color, ink, alt, focus, play, u
         <rect width={w} height={h} style={{ fill: "color-mix(in oklab, var(--color-chalk) 93%, var(--color-ink))" }} />
         <image href={ink} width={w} height={h} preserveAspectRatio="xMidYMax meet" opacity="0.9" />
       </g>
-      <g fill="none" stroke="var(--color-ink)" strokeLinecap="round" strokeLinejoin="round">
-        {sketch.paths
-          .filter((p) => p.k === 0)
-          .map((p, i) => (
-            <path
-              key={i}
-              d={p.d}
-              className="sp-outline"
-              pathLength={1}
-              strokeDasharray="1"
-              strokeDashoffset="1"
-              strokeWidth={2.2}
-            />
-          ))}
-      </g>
-
-      {/* the pen, a plain ballpoint, only while it draws */}
-      <g ref={pen} opacity="0" aria-hidden>
-        <g transform="rotate(32)">
-          <path d="M0 0 L-4.5 -15 L4.5 -15 Z" fill="var(--color-ink)" />
-          <path d="M-7 -15 L7 -15 L7 -40 L-7 -40 Z" fill="#cfd4e6" />
-          <rect x="-7" y="-140" width="14" height="101" rx="3" fill="var(--color-field)" />
-          <rect x="-2" y="-128" width="4" height="46" rx="2" fill="#fff" opacity="0.35" />
-          <rect x="7" y="-132" width="4" height="40" rx="2" fill="var(--color-ink)" />
-        </g>
-      </g>
+      {drawing}
     </svg>
   );
 }

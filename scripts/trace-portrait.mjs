@@ -99,7 +99,10 @@ function rdp(pts, eps) {
   let max = 0, idx = 0;
   for (let i = 1; i < pts.length - 1; i++) {
     const d = Math.abs(dy * pts[i][0] - dx * pts[i][1] + bx * ay - by * ax) / len;
-    if (d > max) (max = d), (idx = i);
+    if (d > max) {
+      max = d;
+      idx = i;
+    }
   }
   if (max <= eps) return [pts[0], pts[pts.length - 1]];
   return [...rdp(pts.slice(0, idx + 1), eps).slice(0, -1), ...rdp(pts.slice(idx), eps)];

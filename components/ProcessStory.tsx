@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import { Mark } from "@/components/hand/Marks";
 import { process } from "@/data/skills";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
@@ -78,7 +79,7 @@ export default function ProcessStory() {
   return (
     <div
       ref={root}
-      className="process-story relative flex min-h-[100svh] flex-col justify-center bg-chalk pb-4 pt-16 text-ink md:py-20"
+      className="process-story paper-md relative bg-chalk flex min-h-[100svh] flex-col justify-center pb-4 pt-16 text-ink md:py-20"
     >
       <div className="mx-auto grid w-full max-w-[1400px] gap-8 px-4 sm:px-6 md:grid-cols-12 md:items-center md:gap-10">
         {/* steps */}
@@ -91,17 +92,37 @@ export default function ProcessStory() {
                   type="button"
                   onClick={() => go(i)}
                   aria-current={i === step ? "step" : undefined}
-                  className={`group w-full rounded-[18px] px-4 py-2 text-left md:py-3 transition-colors duration-500 ${
-                    i === step ? "bg-ink text-chalk" : "hover:bg-ink/5"
-                  }`}
+                  className="group w-full rounded-[18px] px-4 py-2 text-left md:py-3"
                 >
                   <span className="flex items-baseline gap-4">
                     <span
-                      className={`display text-3xl tabular-nums [--wdth:60] ${i === step ? "text-signal" : "text-field"}`}
+                      className={`display text-3xl tabular-nums [--wdth:60] transition-colors duration-500 ${i === step ? "text-field" : "text-ink/35"}`}
                     >
                       {i + 1}
                     </span>
-                    <span className="text-xl font-medium">{s.title}</span>
+                    {/* the pen circles where we are, and ticks off what's done */}
+                    <span className="relative text-xl font-medium">
+                      {s.title}
+                      {i === step && (
+                        <Mark
+                          key={`c${step}`}
+                          now
+                          kind="circle"
+                          duration={0.6}
+                          className="absolute -left-4 -top-2.5 h-[calc(100%+1.25rem)] w-[calc(100%+2rem)] text-field"
+                        />
+                      )}
+                      {i < step && (
+                        <Mark
+                          key={`t${i}`}
+                          now
+                          kind="check"
+                          duration={0.3}
+                          className="absolute -right-10 top-0 h-6 w-8 text-field"
+                          width={3}
+                        />
+                      )}
+                    </span>
                   </span>
                   <span
                     className={`grid transition-[grid-template-rows,opacity] duration-500 ${
@@ -109,7 +130,7 @@ export default function ProcessStory() {
                     }`}
                   >
                     <span className="overflow-hidden">
-                      <span className="block pb-1 pl-[3.1rem] pt-1 text-[15px] leading-relaxed text-chalk/80 md:pt-2 md:text-base">
+                      <span className="block pb-1 pl-[3.1rem] pt-2 text-[15px] leading-relaxed text-ink-muted md:pt-3 md:text-base">
                         {s.text}
                       </span>
                     </span>

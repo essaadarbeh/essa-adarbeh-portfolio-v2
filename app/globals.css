@@ -404,6 +404,24 @@ html.js [data-draw="off"] .ink-path {
 html.js [data-draw="on"] .ink-path {
   transition: stroke-dashoffset var(--dur, 0.7s) cubic-bezier(0.55, 0.08, 0.3, 1) var(--delay, 0s);
 }
+/* marks that draw as soon as they mount (e.g. following the active step) */
+.ink-now {
+  stroke-dasharray: 1;
+  animation: ink-draw var(--dur, 0.7s) cubic-bezier(0.55, 0.08, 0.3, 1) var(--delay, 0s) both;
+}
+@keyframes ink-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-now {
+    animation: none;
+  }
+}
 .written {
   display: inline-block;
 }
@@ -437,6 +455,19 @@ html.js [data-draw="on"] .written {
   background-size:
     26px 26px,
     220px 220px;
+}
+
+/* The same paper for pinned scenes, desktop only: on phones a pinned layer
+   with a tiled background repaints while it scrolls. */
+@media (min-width: 768px) {
+  .paper-md {
+    background-image:
+      radial-gradient(color-mix(in oklab, var(--color-ink) 16%, transparent) 1px, transparent 1.2px),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size:
+      26px 26px,
+      220px 220px;
+  }
 }
 
 /* Rubber stamp: uneven ink via a noise mask, lands with a thump. */
@@ -504,6 +535,12 @@ html.js [data-draw="on"] .tape-in {
 }
 
 /* ── About desk ──────────────────────────────────────────────────────── */
+.desk-row {
+  scrollbar-width: none;
+}
+.desk-row::-webkit-scrollbar {
+  display: none;
+}
 @media (pointer: fine) and (min-width: 768px) {
   .desk-item {
     cursor: grab;

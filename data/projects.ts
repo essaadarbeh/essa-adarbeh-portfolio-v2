@@ -13,6 +13,8 @@ export type Project = {
   /** The project's own brand colour, used for accents on its case study. */
   accent: string;
   tools: string;
+  /** Scribbled on the cover, the one thing to notice. */
+  note: string;
 };
 
 export const projects: Project[] = [
@@ -30,6 +32,7 @@ export const projects: Project[] = [
     theme: { bg: "#E4E7FF", fg: "#0B1238", muted: "#454C78" },
     accent: "#4f46e5",
     tools: "Figma, variables, auto layout, prototyping",
+    note: "change one token, all ten screens follow",
   },
   {
     slug: "atlas",
@@ -45,5 +48,6 @@ export const projects: Project[] = [
     theme: { bg: "#150C33", fg: "#EEF0F6", muted: "#A9A3CC" },
     accent: "#a78bfa",
     tools: "Figma, variables with two modes, prototyping",
+    note: "the hard part: when should it stop and ask?",
   },
 ];

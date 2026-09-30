@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { DrawScope, Mark, Tape, Written } from "@/components/hand/Marks";
+import { DrawScope, Mark, Written } from "@/components/hand/Marks";
+import SketchPortrait from "@/components/hand/SketchPortrait";
+import aboutSketch from "@/data/sketch-about.json";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
 
@@ -81,7 +82,7 @@ function DeskItem({
       aria-label={label}
       role="group"
       data-cursor="Pick up"
-      className={`desk-item md:absolute ${className ?? ""}`}
+      className={`desk-item shrink-0 snap-center md:absolute ${className ?? ""}`}
       style={{ left: x, top: y, "--r": `${r}deg`, "--i": i, transform: `rotate(${r}deg)` } as React.CSSProperties}
     >
       <div className="desk-drop">{children}</div>
@@ -224,6 +225,51 @@ function Todo() {
 
 /* ── section ──────────────────────────────────────────────────────────── */
 
+/**
+ * Essa again, turned around this time: drawn and painted the same way as in
+ * the hero, once the desk scrolls into view.
+ */
+function Figure() {
+  const el = useRef<HTMLDivElement>(null);
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setPlay(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el.current!);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div
+      ref={el}
+      data-no-ink
+      className="relative mx-auto aspect-[608/900] h-[60svh] max-h-[520px] md:absolute md:bottom-0 md:left-[-3%] md:mx-0 md:h-full md:max-h-none"
+    >
+      <SketchPortrait
+        sketch={aboutSketch}
+        color="/portraits/about-color.webp"
+        ink="/portraits/about-ink.webp"
+        alt={`${site.name}, drawn in ink and painted, from behind, glancing back over the shoulder`}
+        focus={[420, 235]}
+        play={play}
+        className="h-full w-full"
+      />
+      <span className="pointer-events-none absolute left-[-2%] top-[4%] flex w-[34%] flex-col items-start md:left-[4%] md:top-[6%] md:w-[26%]">
+        <Written className="-rotate-6 text-xl leading-tight text-ink-muted md:text-2xl" delay={2.6}>
+          me again, thinking it through
+        </Written>
+        <Mark kind="arrow" delay={3.6} duration={0.45} className="ml-8 mt-1 h-10 w-12 text-ink-muted" width={3} />
+      </span>
+    </div>
+  );
+}
+
 export default function About() {
   return (
     <section
@@ -251,63 +297,55 @@ export default function About() {
         </div>
 
         {/* the desk */}
-        <div className="desk relative mt-12 grid justify-items-center gap-10 sm:grid-cols-2 md:mt-10 md:block md:h-[780px]">
-          <DeskItem x="2%" y="4%" r={-4} i={0} label="Photo">
-            <figure className="relative w-[270px] bg-white p-3 pb-14 shadow-[0_2px_4px_rgba(11,18,56,0.08),0_24px_40px_-20px_rgba(11,18,56,0.45)]">
-              <div className="relative aspect-[4/5] overflow-hidden bg-[#10194a]">
-                <Image
-                  src="/portraits/about-color.webp"
-                  alt={`Painted portrait of ${site.name} from behind, glancing back`}
-                  fill
-                  sizes="270px"
-                  draggable={false}
-                  className="object-cover object-[50%_20%]"
-                />
+        <div className="desk relative mt-10 md:h-[780px]">
+          <Figure />
+
+          {/* phones: a row of cards to swipe through; desktop: loose on the desk */}
+          <div className="desk-row -mx-5 mt-2 flex snap-x snap-mandatory items-center gap-7 overflow-x-auto px-8 pb-8 pt-6 sm:-mx-8 md:contents">
+            <DeskItem x="40%" y="0%" r={2} i={0} label="Index card">
+              <div className="w-[min(420px,80vw)] bg-[#fdfcf8] px-7 pb-7 pt-5 shadow-[0_14px_26px_-14px_rgba(0,0,0,0.4)] [background-image:linear-gradient(#e8a0a0,#e8a0a0),repeating-linear-gradient(transparent_0_29px,#cfdcf0_29px_30px)] [background-position:0_52px,0_52px] [background-repeat:no-repeat,repeat] [background-size:100%_1.5px,100%_100%]">
+                <p className="font-hand text-3xl leading-[52px] text-field">Essa Adarbeh</p>
+                <p className="mt-1 text-[17px] leading-[30px]">
+                  I’m a designer who codes, or a developer who designs, depending on the day. I live in Amman, Jordan. I
+                  like interfaces that feel obvious, and code that stays that way.
+                </p>
               </div>
-              <figcaption className="font-hand absolute inset-x-0 bottom-3 text-center text-2xl">
-                me, thinking it through
-              </figcaption>
-              <Tape className="-top-3 left-1/2 -translate-x-1/2" rotate={-4} />
-            </figure>
-          </DeskItem>
+            </DeskItem>
 
-          <DeskItem x="27%" y="0%" r={2} i={1} label="Index card">
-            <div className="w-[min(420px,86vw)] bg-[#fdfcf8] px-7 pb-7 pt-5 shadow-[0_14px_26px_-14px_rgba(0,0,0,0.4)] [background-image:linear-gradient(#e8a0a0,#e8a0a0),repeating-linear-gradient(transparent_0_29px,#cfdcf0_29px_30px)] [background-position:0_52px,0_52px] [background-repeat:no-repeat,repeat] [background-size:100%_1.5px,100%_100%]">
-              <p className="font-hand text-3xl leading-[52px] text-field">Essa Adarbeh</p>
-              <p className="mt-1 text-[17px] leading-[30px]">
-                I’m a designer who codes, or a developer who designs, depending on the day. I live in Amman, Jordan. I
-                like interfaces that feel obvious, and code that stays that way.
-              </p>
-            </div>
-          </DeskItem>
+            <DeskItem x="73%" y="2%" r={5} i={1} label="Note">
+              <Sticky color="#fde68a">Designer and developer in one person. Nothing gets lost in handoff.</Sticky>
+            </DeskItem>
 
-          <DeskItem x="62%" y="3%" r={5} i={2} label="Note">
-            <Sticky color="#fde68a">Designer and developer in one person. Nothing gets lost in handoff.</Sticky>
-          </DeskItem>
+            <DeskItem x="84%" y="22%" r={-6} i={2} label="Note">
+              <Sticky color="#bfdbfe">AI in the loop. A human at the wheel.</Sticky>
+            </DeskItem>
 
-          <DeskItem x="82%" y="14%" r={-6} i={3} label="Note">
-            <Sticky color="#bfdbfe">AI in the loop. A human at the wheel.</Sticky>
-          </DeskItem>
+            <DeskItem x="39%" y="47%" r={-3} i={3} label="Clock">
+              <AmmanClock />
+            </DeskItem>
 
-          <DeskItem x="24%" y="46%" r={-3} i={4} label="Clock">
-            <AmmanClock />
-          </DeskItem>
+            <DeskItem x="55%" y="41%" r={3} i={4} label="To-do list">
+              <Todo />
+            </DeskItem>
 
-          <DeskItem x="42%" y="42%" r={3} i={5} label="To-do list">
-            <Todo />
-          </DeskItem>
+            <DeskItem x="73%" y="50%" r={-2} i={5} label="Note">
+              <Sticky color="#fbcfe8">Taste, judgment and care stay mine.</Sticky>
+            </DeskItem>
 
-          <DeskItem x="64%" y="50%" r={-2} i={6} label="Note">
-            <Sticky color="#fbcfe8">Taste, judgment and care stay mine.</Sticky>
-          </DeskItem>
+            <DeskItem x="84%" y="71%" r={4} i={6} label="Note">
+              <Sticky color="#bbf7d0">I designed and built this whole site. It’s its own case study.</Sticky>
+            </DeskItem>
 
-          <DeskItem x="3%" y="72%" r={1} i={7} label="Label">
-            <p className="label-tape">OPEN TO FULL-TIME + FREELANCE</p>
-          </DeskItem>
-
-          <DeskItem x="81%" y="62%" r={4} i={8} label="Note">
-            <Sticky color="#bbf7d0">I designed and built this whole site. It’s its own case study.</Sticky>
-          </DeskItem>
+            <DeskItem x="41%" y="88%" r={1} i={7} label="Label">
+              <p className="label-tape">OPEN TO FULL-TIME + FREELANCE</p>
+            </DeskItem>
+          </div>
+          <p className="flex items-center justify-center gap-2 md:hidden">
+            <Written className="text-xl text-ink-muted" delay={1.2}>
+              swipe, there’s more on the desk
+            </Written>
+            <Mark kind="squiggle" delay={2.3} duration={0.5} className="h-3 w-10 text-ink-muted" width={5} />
+          </p>
         </div>
       </DrawScope>
     </section>

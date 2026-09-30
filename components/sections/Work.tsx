@@ -149,7 +149,7 @@ export default function Work() {
             <h2 id="work-title" className="display text-[clamp(3.5rem,11vw,11rem)] uppercase [--wdth:125]">
               Work
             </h2>
-            <Written className="-rotate-3 pb-4 text-3xl text-sky md:pb-8" delay={0.4}>
+            <Written className="-rotate-3 pb-4 text-3xl text-[var(--muted)] md:pb-8" delay={0.4}>
               (two I’m proud of)
             </Written>
           </span>
@@ -168,7 +168,11 @@ export default function Work() {
               label: p.title,
             };
             return (
-              <li key={p.slug} className="project roll-host grid gap-8 py-14 md:grid-cols-12 md:gap-8 md:py-24">
+              <li
+                key={p.slug}
+                className="project roll-host grid gap-8 py-14 md:grid-cols-12 md:gap-8 md:py-24"
+                style={{ "--roll": p.accent } as React.CSSProperties}
+              >
                 <div className="md:col-span-4 md:flex md:flex-col md:justify-between md:py-2">
                   <div>
                     <h3 className="project-title display text-[clamp(4rem,9vw,9rem)] uppercase leading-[0.85] [--wdth:70]">

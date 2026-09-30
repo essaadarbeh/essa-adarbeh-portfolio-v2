@@ -296,7 +296,7 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
         label={next.title}
         data-cursor="Next case"
         className="roll-host block px-4 pb-16 pt-20 sm:px-6"
-        style={{ background: next.theme.bg, color: next.theme.fg }}
+        style={{ background: next.theme.bg, color: next.theme.fg, "--roll": next.accent } as React.CSSProperties}
       >
         <span className="mx-auto block max-w-[1400px]">
           <span className="block text-sm opacity-70">Next case study</span>

@@ -285,12 +285,13 @@ html:not(.js) .decode-source {
   transition: transform 0.7s var(--ease-out-expo);
   transition-delay: calc(var(--i) * 28ms);
 }
+/* the copy that rolls in: solid, in the host's accent (an outlined copy
+   took its stroke from its own transparent colour and vanished) */
 .roll-b {
   position: absolute;
   inset: 0.06em 0 auto;
   transform: translateY(110%);
-  color: transparent;
-  -webkit-text-stroke: 0.025em currentColor;
+  color: var(--roll, currentColor);
 }
 @media (hover: hover) {
   .roll-host:hover .roll-a {

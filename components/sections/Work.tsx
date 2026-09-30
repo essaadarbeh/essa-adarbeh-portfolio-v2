@@ -154,7 +154,7 @@ export default function Work() {
             </Written>
           </span>
           <p className="max-w-[36ch] pb-2 text-lg leading-snug text-[var(--muted)]">
-            Two recent product designs, each built on its own design system in Figma. Every case study has its flow, its
+            Two self-initiated product designs, each built on its own design system in Figma. Every case study has its flow, its
             system and a working piece you can play with.
           </p>
         </DrawScope>

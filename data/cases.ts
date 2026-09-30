@@ -24,7 +24,7 @@ export const cases: Record<Case["slug"], Case> = {
     slug: "lumen",
     lede: "Analytics dashboards fail in a predictable way: every chart shouts, and nothing says what to do next. Lumen is a product analytics tool designed to be read, not decoded.",
     brief: [
-      "The goal was a data-dense SaaS dashboard that still reads calmly: activation, engagement and revenue on one screen, each with enough context to act on.",
+      "The goal I set was a data-dense SaaS dashboard that still reads calmly: activation, engagement and revenue on one screen, each with enough context to act on.",
       "It also had to scale. Ten screens share one foundation, so the system had to be decided before the screens, not reverse-engineered from them.",
     ],
     approach: [

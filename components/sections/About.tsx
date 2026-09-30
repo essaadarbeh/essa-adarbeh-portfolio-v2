@@ -313,11 +313,11 @@ export default function About() {
             </DeskItem>
 
             <DeskItem x="73%" y="2%" r={5} i={1} label="Note">
-              <Sticky color="#fde68a">Designer and developer in one person. Nothing gets lost in handoff.</Sticky>
+              <Sticky color="#fde68a">Two products, 17 screens, every one on Figma variables.</Sticky>
             </DeskItem>
 
             <DeskItem x="84%" y="22%" r={-6} i={2} label="Note">
-              <Sticky color="#bfdbfe">AI in the loop. A human at the wheel.</Sticky>
+              <Sticky color="#bfdbfe">AI speeds up the drafts. The decisions stay mine.</Sticky>
             </DeskItem>
 
             <DeskItem x="39%" y="47%" r={-3} i={3} label="Clock">
@@ -329,15 +329,11 @@ export default function About() {
             </DeskItem>
 
             <DeskItem x="73%" y="50%" r={-2} i={5} label="Note">
-              <Sticky color="#fbcfe8">Taste, judgment and care stay mine.</Sticky>
+              <Sticky color="#fbcfe8">Favourite part of a project: the first week of questions.</Sticky>
             </DeskItem>
 
             <DeskItem x="84%" y="71%" r={4} i={6} label="Note">
               <Sticky color="#bbf7d0">I designed and built this whole site. It’s its own case study.</Sticky>
-            </DeskItem>
-
-            <DeskItem x="41%" y="88%" r={1} i={7} label="Label">
-              <p className="label-tape">OPEN TO FULL-TIME + FREELANCE</p>
             </DeskItem>
           </div>
           <p className="flex items-center justify-center gap-2 md:hidden">

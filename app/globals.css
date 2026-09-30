@@ -551,59 +551,83 @@ html.js [data-draw="on"] .tape-in {
   scale: 1.05;
 }
 
-/* ── Figma stickers on the hero portrait ──────────────────────────────── */
-.fs-frame {
+/* ── The hero portrait, opened in Figma (FigmaInspect) ───────────────── */
+.fi-outline {
+  transition: clip-path 0.28s var(--ease-out-expo);
+}
+.fi-box {
   border: 1.5px solid #0d99ff;
   opacity: 0;
-  scale: 0.97;
   transition:
-    opacity 0.2s ease,
-    scale 0.35s var(--ease-out-expo);
+    top 0.28s var(--ease-out-expo),
+    left 0.28s var(--ease-out-expo),
+    right 0.28s var(--ease-out-expo),
+    bottom 0.28s var(--ease-out-expo),
+    opacity 0.15s ease;
 }
-.fs[data-on="true"] .fs-frame {
+.fi[data-layer="true"] .fi-box {
   opacity: 1;
-  scale: 1;
 }
-.fs-item {
+.fi-frame,
+.fi-follow,
+.fi-me {
   opacity: 0;
-  scale: 0.3;
-  rotate: var(--r0, 0deg);
-  transition:
-    opacity 0.18s ease,
-    scale 0.3s ease,
-    rotate 0.3s ease;
+  transition: opacity 0.25s ease;
 }
-.fs[data-on="true"] .fs-item {
+.fi[data-on="true"] .fi-frame,
+.fi[data-on="true"] .fi-follow,
+.fi[data-on="true"] .fi-me {
   opacity: 1;
-  scale: 1;
-  rotate: var(--r, 0deg);
-  /* slapped on one after another, with a little bounce */
-  transition:
-    opacity 0.2s ease calc(var(--i) * 70ms),
-    scale 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) calc(var(--i) * 70ms),
-    rotate 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) calc(var(--i) * 70ms);
 }
-.fs[data-on="true"] .fs-drift-a {
-  animation: fs-drift 3.2s ease-in-out infinite alternate;
+/* the native pointer steps aside for the Figma one */
+@media (pointer: fine) {
+  [data-cursor-hide] {
+    cursor: none;
+  }
 }
-.fs[data-on="true"] .fs-drift-b {
-  animation: fs-drift 2.7s ease-in-out -1s infinite alternate-reverse;
+@media (pointer: coarse) {
+  .fi-follow,
+  .fi-me {
+    display: none;
+  }
 }
-@keyframes fs-drift {
+/* FigJam stickers: slapped on with a bounce, peeled off when you leave */
+.fi-stamp {
+  position: absolute;
+  width: 15%;
+  translate: -50% -50%;
+  rotate: var(--r);
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.3));
+  animation: fi-slap 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) both;
+}
+.fi-stamp svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@keyframes fi-slap {
   from {
-    translate: 0 0;
+    scale: 1.8;
+    opacity: 0;
   }
   to {
-    translate: 10px 7px;
+    scale: 1;
+    opacity: 1;
+  }
+}
+@keyframes fi-peel {
+  to {
+    scale: 0.6;
+    opacity: 0;
+    rotate: calc(var(--r) + 25deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fs-frame,
-  .fs-item,
-  .fs[data-on="true"] .fs-item {
+  .fi-outline,
+  .fi-box {
     transition: opacity 0.15s ease;
   }
-  .fs[data-on="true"] [class*="fs-drift"] {
+  .fi-stamp {
     animation: none;
   }
 }

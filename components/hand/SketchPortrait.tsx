@@ -21,6 +21,8 @@ type Props = {
   instant?: boolean;
   /** Above the fold: fetch both images early. */
   priority?: boolean;
+  /** The built-in eraser (hover) and tap-to-swap. Off when a parent brings its own. */
+  interactive?: boolean;
   className?: string;
 };
 
@@ -65,6 +67,7 @@ export default function SketchPortrait({
   unwashOn,
   instant,
   priority,
+  interactive = true,
   className,
 }: Props) {
   if (priority) {
@@ -133,7 +136,7 @@ export default function SketchPortrait({
 
   // eraser (fine pointers) and tap-to-swap (touch)
   useEffect(() => {
-    if (lite === null) return;
+    if (lite === null || !interactive) return;
     const root = (lite ? svg.current : wrap.current) as HTMLElement;
     if (lite) {
       let painted = true;
@@ -198,7 +201,7 @@ export default function SketchPortrait({
       root.removeEventListener("click", tap);
       cancelAnimationFrame(frame);
     };
-  }, [w, full, lite, fx, fy]);
+  }, [w, full, lite, fx, fy, interactive]);
 
   // leaving the section, the paint drains back out and the sketch stays
   useEffect(() => {

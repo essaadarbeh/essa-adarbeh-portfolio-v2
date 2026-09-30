@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Doodle from "@/components/hand/Doodle";
-import FigmaStickers from "@/components/hand/FigmaStickers";
+import FigmaInspect from "@/components/hand/FigmaInspect";
 import { DrawScope, Mark, Written } from "@/components/hand/Marks";
 import SketchPortrait from "@/components/hand/SketchPortrait";
 import heroSketch from "@/data/sketch-hero.json";
@@ -109,6 +109,7 @@ export default function Hero() {
         <div
           ref={figure}
           data-no-ink
+          data-cursor-hide
           className="relative -mt-10 ml-auto mr-[-6vw] aspect-[425/900] h-[64svh] max-h-[640px] md:absolute md:bottom-0 md:right-[7%] md:m-0 md:h-[min(96svh,1000px)] md:max-h-none"
         >
           <SketchPortrait
@@ -119,10 +120,11 @@ export default function Hero() {
             focus={[110, 240]}
             play={on}
             priority
+            interactive={false}
             unwashOn={root}
             className="h-full w-full"
           />
-          <FigmaStickers host={figure} />
+          <FigmaInspect host={figure} ink="/portraits/hero-ink.webp" />
 
           {/* what it is, and what to do with it */}
           <div className="pointer-events-none absolute left-[-64%] top-[11%] hidden w-[62%] flex-col items-end md:flex">
@@ -130,7 +132,7 @@ export default function Hero() {
               that’s me, drawn first
             </Written>
             <Written className="rotate-[3deg] text-right text-xl text-field" delay={3.1}>
-              hover: the sketch is still under the paint
+              I’m a Figma file: hover to inspect, click to stamp
             </Written>
             <Mark kind="arrow" delay={3.5} duration={0.45} className="mr-1 mt-1 h-12 w-16 text-ink-muted" width={3} />
           </div>

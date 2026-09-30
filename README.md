@@ -57,13 +57,12 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 - **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through; on phones a tap swaps sketch and painting. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
 - **About.** Essa again, turned around this time: the back-view painting is drawn and painted the same way as the hero once the desk scrolls into view. Around the figure is a desk of objects you can pick up and move: an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones the desk becomes a row of cards you swipe through.
 - **Work.** The notebook page tears off here (`components/hand/TornEdge.tsx`) and the screens begin. Lumen and Atlas have titles that roll letter by letter on hover (transform-only), and a note scribbled over each cover in the project's own colour. Every project opens its own case study with a page transition in that project's colour.
-- **Case studies** (`/work/lumen`, `/work/atlas`):
-  - the brief and approach
-  - an interactive user flow (it draws as you scroll, and each step explains itself; Atlas includes the "deny" branch)
-  - a compare slider: Lumen's wireframe against the final screen, and Atlas in dark and light mode, driven by the real token values from Figma
-  - the system in numbers, plus a component inventory with every variant
-  - the live demo
-  - a reflection, and a link to the next case
+- **Case studies** (`/work/lumen`, `/work/atlas`) tell the same paper-and-screen story as the home page:
+  - the project on its own screen, with a taped index card (role, scope, tools) and the cover note from the home page
+  - the page tears into a notebook for the thinking: the brief, the approach as sticky notes, and an interactive user flow (it draws as you scroll, and each step explains itself; Atlas includes the "deny" branch)
+  - back on screen for the build: a compare slider (Lumen's wireframe against the final screen, Atlas in dark and light mode, driven by the real token values from Figma), the system in numbers plus a component inventory with every variant, and the live demo
+  - a signed note on paper to close, then the next case
+  - every section heading has a note scribbled beside it, in the project's colour
 - **Process.** Back on paper. The pen circles "design" and underlines "code" in the heading, the same way it marks up the hero. Then comes the design-file compare slider, then a pinned scene where one contact card evolves through the four steps: sticky-note questions, a redlined wireframe, code writing itself, then the finished, working card. The pen circles the step you're on and ticks off the ones behind you.
 - **Toolkit.** A working keyboard with one tool per key, with a note scribbled on it: it plays a short tour by itself until someone takes over. A grouped index below lists every tool at a glance.
 - **Contact.** A letter. The composer starts "Hi Essa,", the way the email will, and the left column is signed by hand with a "Replies within a day" stamp. It builds the email and opens it in your mail app, and also has copy-to-clipboard and live Amman time.

@@ -12,6 +12,8 @@ export type Project = {
   theme: { bg: string; fg: string; muted: string };
   /** The project's own brand colour, used for accents on its case study. */
   accent: string;
+  /** The accent, dark enough to write with on paper (case-study notebook pages). */
+  ink: string;
   tools: string;
   /** Scribbled on the cover, the one thing to notice. */
   note: string;
@@ -31,6 +33,7 @@ export const projects: Project[] = [
     href: "https://www.figma.com/design/73pgXNn3lV15mu0GNY3C2t/Lumen-Analytics?node-id=63-1062",
     theme: { bg: "#E4E7FF", fg: "#0B1238", muted: "#454C78" },
     accent: "#4f46e5",
+    ink: "#4f46e5",
     tools: "Figma, variables, auto layout, prototyping",
     note: "change one token, all ten screens follow",
   },
@@ -47,6 +50,7 @@ export const projects: Project[] = [
     href: "https://www.figma.com/design/2InYyu117QpzCMzni2fhve/Atlas-%E2%80%94-AI-Research-Agent?node-id=34-718",
     theme: { bg: "#150C33", fg: "#EEF0F6", muted: "#A9A3CC" },
     accent: "#a78bfa",
+    ink: "#6d4ae0",
     tools: "Figma, variables with two modes, prototyping",
     note: "the hard part: when should it stop and ask?",
   },

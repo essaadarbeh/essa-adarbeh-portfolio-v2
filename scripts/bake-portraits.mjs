@@ -5,10 +5,13 @@
 //   npm run bake
 //
 // Per portrait: trim the transparent padding once, then from that one buffer
-//   1. write the true-colour version untouched, and
-//   2. stretch the luminance between its 1st and 99th percentile and remap it
-//      through RAMP (ink -> cobalt -> sky -> chalk).
-// Both outputs share dimensions, so their UVs line up pixel for pixel.
+//   1. write the true-colour version untouched,
+//   2. stretch the luminance between its 1st and 99th percentile (+ gamma)
+//      and write it as greyscale — the shader gradient-maps this through the
+//      active palette at runtime, so every palette recolours the portrait, and
+//   3. remap that same luminance through RAMP (the Cobalt palette) as a
+//      static image for no-WebGL browsers and the share card.
+// All outputs share dimensions, so their UVs line up pixel for pixel.
 
 import sharp from "sharp";
 import path from "node:path";
@@ -81,10 +84,13 @@ async function bake({ src, out, gamma }) {
   const hi = pct(0.99);
 
   const toned = Buffer.alloc(data.length);
+  const luma = Buffer.alloc(data.length);
   for (let i = 0; i < px; i++) {
     const o = i * 4;
     const l = 0.2126 * data[o] + 0.7152 * data[o + 1] + 0.0722 * data[o + 2];
     const t = Math.pow(Math.min(1, Math.max(0, (l - lo) / (hi - lo))), gamma);
+    luma[o] = luma[o + 1] = luma[o + 2] = Math.round(t * 255);
+    luma[o + 3] = data[o + 3];
     const [r, g, b] = rampAt(t);
     toned[o] = r;
     toned[o + 1] = g;
@@ -97,6 +103,9 @@ async function bake({ src, out, gamma }) {
   await sharp(toned, { raw: { width: info.width, height: info.height, channels: 4 } })
     .webp(webp)
     .toFile(path.join(OUT_DIR, `${out}-tone.webp`));
+  await sharp(luma, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .webp(webp)
+    .toFile(path.join(OUT_DIR, `${out}-luma.webp`));
 
   console.log(`${out}: ${info.width}x${info.height}, levels ${lo}–${hi}`);
 }

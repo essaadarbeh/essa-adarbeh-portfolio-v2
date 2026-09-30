@@ -1,71 +1,127 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "@/lib/gsap";
+import { useEffect, useRef } from "react";
 
 /**
- * A dot that follows the pointer and becomes a labelled disc over anything
- * with data-cursor="Label". Fine pointers only; touch keeps the system cursor.
+ * Two layers. The dot sits exactly on the pointer every frame (no easing, so
+ * it never feels behind). The ring trails it with a short lerp and grows over
+ * anything interactive; over [data-cursor="Label"] it becomes a labelled disc.
+ * Everything is transform and opacity on fixed layers, written straight to
+ * the DOM, so moving the mouse never triggers layout or a React render.
+ * Fine pointers only; touch keeps the system behaviour.
  */
 export default function Cursor() {
   const dot = useRef<HTMLDivElement>(null);
-  const [label, setLabel] = useState<string | null>(null);
-  const [active, setActive] = useState(false);
-  const [enabled, setEnabled] = useState(false);
+  const ring = useRef<HTMLDivElement>(null);
+  const label = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const fine = matchMedia("(pointer: fine)");
-    if (!fine.matches) return;
-    setEnabled(true);
+    if (!matchMedia("(pointer: fine)").matches) return;
+    const d = dot.current!;
+    const r = ring.current!;
+    const l = label.current!;
     document.documentElement.classList.add("has-cursor");
+    d.hidden = r.hidden = false;
 
-    const el = dot.current!;
-    const xTo = gsap.quickTo(el, "x", { duration: 0.35, ease: "power3.out" });
-    const yTo = gsap.quickTo(el, "y", { duration: 0.35, ease: "power3.out" });
+    const pos = { x: -100, y: -100 };
+    const ringPos = { x: -100, y: -100 };
+    // the ring is drawn at its largest (label) size and scaled down, so the
+    // label text is crisp at scale 1
+    const REST = 0.4;
+    let scale = REST;
+    let targetScale = REST;
+    let raf = 0;
     let shown = false;
+    let lastLabel: string | null = null;
+
+    const frame = () => {
+      raf = 0;
+      // ~0.35 per frame closes the gap in well under 100ms
+      ringPos.x += (pos.x - ringPos.x) * 0.35;
+      ringPos.y += (pos.y - ringPos.y) * 0.35;
+      scale += (targetScale - scale) * 0.3;
+      r.style.transform = `translate3d(${ringPos.x}px, ${ringPos.y}px, 0) scale(${scale})`;
+      if (
+        Math.abs(pos.x - ringPos.x) > 0.1 ||
+        Math.abs(pos.y - ringPos.y) > 0.1 ||
+        Math.abs(targetScale - scale) > 0.001
+      ) {
+        raf = requestAnimationFrame(frame);
+      }
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
 
     const move = (e: PointerEvent) => {
+      pos.x = e.clientX;
+      pos.y = e.clientY;
+      d.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       if (!shown) {
-        gsap.set(el, { x: e.clientX, y: e.clientY });
-        gsap.to(el, { autoAlpha: 1, duration: 0.3 });
         shown = true;
+        ringPos.x = pos.x;
+        ringPos.y = pos.y;
+        d.style.opacity = r.style.opacity = "1";
       }
-      xTo(e.clientX);
-      yTo(e.clientY);
-      const target = (e.target as Element | null)?.closest?.("[data-cursor], a, button, [role=slider], input");
-      setLabel(target?.getAttribute("data-cursor") ?? null);
-      setActive(Boolean(target));
+
+      const target = (e.target as Element | null)?.closest?.(
+        "[data-cursor], a, button, label, [role=slider], [role=tab], [role=radio], input[type=range]",
+      );
+      const text = target?.getAttribute("data-cursor") ?? null;
+      const overText = (e.target as Element | null)?.closest?.("input:not([type=range]), textarea");
+      if (text !== lastLabel) {
+        lastLabel = text;
+        l.textContent = text ?? "";
+        r.dataset.label = text ? "true" : "";
+      }
+      targetScale = text ? 1 : target ? 0.62 : REST;
+      d.style.opacity = overText ? "0" : "1";
+      r.style.opacity = overText ? "0" : "1";
+      kick();
     };
     const leave = () => {
-      gsap.to(el, { autoAlpha: 0, duration: 0.2 });
       shown = false;
+      d.style.opacity = r.style.opacity = "0";
+    };
+    const down = () => {
+      targetScale *= 0.85;
+      kick();
+    };
+    const up = () => {
+      targetScale /= 0.85;
+      kick();
     };
 
     window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerdown", down, { passive: true });
+    window.addEventListener("pointerup", up, { passive: true });
     document.documentElement.addEventListener("pointerleave", leave);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointerup", up);
       document.documentElement.removeEventListener("pointerleave", leave);
       document.documentElement.classList.remove("has-cursor");
     };
   }, []);
 
-  if (!enabled) return <div ref={dot} hidden />;
-
   return (
-    <div
-      ref={dot}
-      aria-hidden
-      className="pointer-events-none fixed left-0 top-0 z-[300] opacity-0"
-      style={{ mixBlendMode: label ? "normal" : "difference" }}
-    >
+    <>
       <div
-        className={`-translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full transition-[width,height,background-color] duration-500 ease-[var(--ease-out-expo)] ${
-          label ? "h-24 w-24 bg-marigold text-ink" : active ? "h-11 w-11 bg-white" : "h-3 w-3 bg-white"
-        }`}
+        ref={ring}
+        hidden
+        aria-hidden
+        className="cursor-ring pointer-events-none fixed left-0 top-0 z-[300] opacity-0 will-change-transform"
       >
-        {label && <span className="px-2 text-center text-[13px] font-medium leading-tight">{label}</span>}
+        <span ref={label} className="cursor-label" />
       </div>
-    </div>
+      <div
+        ref={dot}
+        hidden
+        aria-hidden
+        className="cursor-dot pointer-events-none fixed left-0 top-0 z-[301] opacity-0 will-change-transform"
+      />
+    </>
   );
 }

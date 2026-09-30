@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
 /* ── Tokens ──────────────────────────────────────────────────────────────
-   Five colours, taken from the portrait itself: the suit's navy (ink), the
-   field it stands on (cobalt), its highlights (sky, chalk) and one warm
-   signal (marigold) that is only ever used for state — availability, focus,
-   the lens rim. Contrast is measured against the surface each is used on. */
+   Colours are roles, not hues. Each palette in lib/palettes.ts fills the
+   same five roles (plus muted text variants), injected as --p-* variables in
+   the layout and switched with [data-palette] on <html>. */
 @theme inline {
-  --color-ink: #0b1238;
-  --color-cobalt: #2b3bff;
-  --color-sky: #a9b8ff;
-  --color-chalk: #eef0f6;
-  --color-marigold: #ffc24b;
+  --color-ink: var(--p-ink);
+  --color-field: var(--p-field);
+  --color-sky: var(--p-sky);
+  --color-chalk: var(--p-chalk);
+  --color-signal: var(--p-signal);
 
-  --color-ink-muted: #4a5070; /* on chalk, 7.3:1 */
-  --color-chalk-muted: #9aa3c7; /* on ink, 7.1:1 */
-  --color-cobalt-muted: #d6dbff; /* on cobalt, 5.2:1 */
+  --color-ink-muted: var(--p-ink-muted);
+  --color-chalk-muted: var(--p-chalk-muted);
+  --color-field-muted: var(--p-field-muted);
 
   --font-display: var(--font-anybody);
   --font-sans: var(--font-onest);
@@ -38,12 +37,12 @@
   }
 
   ::selection {
-    background: var(--color-marigold);
+    background: var(--color-signal);
     color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-marigold);
+    outline: 2px solid var(--color-signal);
     outline-offset: 3px;
     box-shadow: 0 0 0 5px var(--color-ink);
     border-radius: 4px;
@@ -111,4 +110,178 @@ html.js:not([data-intro="done"]) [data-intro-hide] {
    char (intro) or on its line (scroll) both land. */
 .display .char {
   font-variation-settings: "wdth" var(--wdth, 100);
+}
+
+/* Palette switches run as a view transition: the new palette grows out of
+   the click point as a circle (animated from lib/palette-client.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Portrait fallback image: visible without JS; with JS it waits for WebGL
+   and only returns if WebGL fails (data-fallback). */
+html.js .portrait-fallback {
+  opacity: 0;
+}
+html.js .portrait[data-fallback] .portrait-fallback {
+  opacity: 1;
+}
+
+/* About: the portrait stands in a pool of the field colour. */
+.about-stage {
+  background: radial-gradient(
+    90% 70% at 50% 30%,
+    var(--color-field) 0%,
+    color-mix(in oklab, var(--color-field) 35%, var(--color-ink)) 48%,
+    var(--color-ink) 100%
+  );
+}
+
+/* Decoded text renders into an aria-hidden span from JS; without JS the
+   screen-reader copy is shown instead. */
+html:not(.js) .decode-source {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Live demos: new activity slides in; the primary approval action breathes
+   until it's answered. */
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.feed-in {
+  animation: feed-in 0.5s var(--ease-out-expo) both;
+}
+@keyframes approve-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgb(20 184 166 / 0.25);
+  }
+}
+.approve-pulse {
+  animation: approve-pulse 1.6s ease-in-out infinite;
+}
+
+/* ── Toolkit keyboard ─────────────────────────────────────────────────── */
+.kb-deck {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-ink) 82%, var(--color-chalk)) 0%,
+    color-mix(in oklab, var(--color-ink) 90%, black) 100%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-chalk) 18%, transparent);
+}
+@media (min-width: 768px) {
+  .kb-deck {
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--color-chalk) 18%, transparent),
+      0 30px 60px -30px black;
+  }
+}
+
+/* Keys have real depth: a lip underneath that the cap sinks into on press.
+   Only transform and box-shadow change, so a press is compositor-cheap. */
+.keycap {
+  --lip: color-mix(in oklab, var(--color-chalk) 58%, var(--color-ink));
+  border-radius: 12px;
+  color: var(--color-ink);
+  background: linear-gradient(
+    180deg,
+    var(--color-chalk) 0%,
+    color-mix(in oklab, var(--color-chalk) 90%, var(--color-ink)) 100%
+  );
+  box-shadow:
+    0 5px 0 var(--lip),
+    0 10px 18px -8px black;
+  transition:
+    transform 90ms ease-out,
+    box-shadow 90ms ease-out,
+    opacity 300ms,
+    background 300ms,
+    color 300ms;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (min-width: 640px) {
+  .keycap {
+    border-radius: 14px;
+  }
+}
+.keycap:hover {
+  transform: translateY(-1px);
+}
+.keycap:active,
+.keycap[data-pressed] {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 var(--lip),
+    0 3px 6px -3px black;
+}
+.keycap[data-active] {
+  --lip: color-mix(in oklab, var(--color-field) 55%, black);
+  color: var(--color-chalk);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--color-field) 85%, white) 0%, var(--color-field) 100%);
+}
+.keycap[data-dim] {
+  opacity: 0.35;
+}
+
+.caret {
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Cursor ───────────────────────────────────────────────────────────── */
+.cursor-dot {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 999px;
+  background: #fff;
+  mix-blend-mode: difference;
+  transition: opacity 0.2s;
+}
+.cursor-ring {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  margin: -44px 0 0 -44px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  mix-blend-mode: difference;
+  transition:
+    opacity 0.2s,
+    background-color 0.3s,
+    border-color 0.3s;
+}
+.cursor-ring[data-label="true"] {
+  background: var(--color-signal);
+  border-color: transparent;
+  mix-blend-mode: normal;
+}
+.cursor-label {
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--color-ink);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.cursor-ring[data-label="true"] .cursor-label {
+  opacity: 1;
 }

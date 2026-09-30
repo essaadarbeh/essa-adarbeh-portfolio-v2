@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
+import PaletteSwitcher from "@/components/PaletteSwitcher";
 
 /**
  * Three floating pills on an ink glass, so they read on every section colour
@@ -47,13 +48,15 @@ export default function Nav() {
     };
   }, []);
 
-  const pill = "rounded-full bg-ink/75 text-chalk ring-1 ring-white/10 backdrop-blur-md backdrop-saturate-150";
+  // Blur only where it's cheap: a backdrop-filter on a fixed bar repaints on
+  // every scroll frame, which phones feel. They get a denser solid instead.
+  const pill = "rounded-full bg-ink/90 text-chalk ring-1 ring-white/10 md:bg-ink/75 md:backdrop-blur-md";
 
   return (
     <header ref={ref} className="fixed inset-x-0 top-0 z-[100] px-3 pt-3 sm:px-5 sm:pt-5" data-intro-hide>
       <nav aria-label="Main" className="flex items-center justify-between gap-3">
         <a href="#top" className={`${pill} flex h-11 items-center gap-2 pl-1.5 pr-4 text-sm font-medium`}>
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-cobalt font-display text-[13px] font-extrabold [--wdth:130]">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-field font-display text-[13px] font-extrabold [--wdth:130]">
             EA
           </span>
           <span className="hidden sm:inline">{site.name}</span>
@@ -78,27 +81,30 @@ export default function Nav() {
           })}
         </ul>
 
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-controls="mobile-menu"
-          className={`${pill} h-11 px-4 text-sm font-medium md:hidden`}
-        >
-          {open ? "Close" : "Menu"}
-        </button>
+        <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <PaletteSwitcher className={`${pill} hidden h-11 px-1.5 lg:flex`} />
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            className={`${pill} h-11 px-4 text-sm font-medium md:hidden`}
+          >
+            {open ? "Close" : "Menu"}
+          </button>
 
-        <a href="#contact" className={`${pill} hidden h-11 sm:flex items-center gap-2.5 px-4 text-sm font-medium`}>
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inset-0 animate-ping rounded-full bg-marigold opacity-60 motion-reduce:hidden" />
-            <span className="relative h-2 w-2 rounded-full bg-marigold" />
-          </span>
-          {site.available ? "Available for work" : "Get in touch"}
-        </a>
+          <a href="#contact" className={`${pill} hidden h-11 sm:flex items-center gap-2.5 px-4 text-sm font-medium`}>
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inset-0 animate-ping rounded-full bg-signal opacity-60 motion-reduce:hidden" />
+              <span className="relative h-2 w-2 rounded-full bg-signal" />
+            </span>
+            {site.available ? "Available for work" : "Get in touch"}
+          </a>
+        </div>
       </nav>
 
       {open && (
-        <div id="mobile-menu" className="mt-3 rounded-[28px] bg-ink/90 p-3 text-chalk backdrop-blur-md md:hidden">
+        <div id="mobile-menu" className="mt-3 rounded-[28px] bg-ink p-3 text-chalk md:hidden">
           <ul>
             {site.nav.map((n) => (
               <li key={n.href}>
@@ -112,6 +118,10 @@ export default function Nav() {
               </li>
             ))}
           </ul>
+          <div className="mt-2 border-t border-chalk/15 px-3 pb-2 pt-4">
+            <p className="mb-2 text-sm text-chalk-muted">Palette</p>
+            <PaletteSwitcher labelled className="flex-wrap" />
+          </div>
         </div>
       )}
     </header>

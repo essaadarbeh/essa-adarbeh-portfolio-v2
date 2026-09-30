@@ -72,15 +72,15 @@ export default function Process() {
           <span aria-hidden className="absolute left-[11px] top-0 h-full w-px bg-ink/15 md:left-0 md:h-px md:w-full" />
           <span
             aria-hidden
-            className="process-fill absolute left-[11px] top-0 h-full w-px origin-top bg-cobalt md:left-0 md:h-px md:w-full md:origin-left"
+            className="process-fill absolute left-[11px] top-0 h-full w-px origin-top bg-field md:left-0 md:h-px md:w-full md:origin-left"
           />
           {process.map((s, i) => (
             <li key={s.title} className="process-step relative pl-10 md:pl-0">
               <span
                 aria-hidden
-                className="absolute left-0 top-1.5 h-[23px] w-[23px] rounded-full border border-cobalt bg-chalk md:-top-[calc(3.5rem+11px)]"
+                className="absolute left-0 top-1.5 h-[23px] w-[23px] rounded-full border border-field bg-chalk md:-top-[calc(3.5rem+11px)]"
               />
-              <p className="display text-6xl text-cobalt [--wdth:60]">{i + 1}</p>
+              <p className="display text-6xl text-field [--wdth:60]">{i + 1}</p>
               <h3 className="mt-3 text-2xl font-medium">{s.title}</h3>
               <p className="mt-3 max-w-[36ch] leading-relaxed text-ink-muted">{s.text}</p>
             </li>

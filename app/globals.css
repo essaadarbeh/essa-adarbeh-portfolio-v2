@@ -535,6 +535,20 @@ html.js [data-draw="on"] .tape-in {
   }
 }
 
+/* ── Nav: the strip of masking tape ─────────────────────────────────── */
+.nav-tape {
+  padding: 9px 32px 12px;
+  /* nearly opaque: big headlines scroll underneath */
+  background: color-mix(in oklab, #f3e7b4 97%, transparent);
+  box-shadow: 0 2px 6px -1px rgb(0 0 0 / 0.22);
+  rotate: -1.2deg;
+  clip-path: polygon(1% 8%, 0 30%, 1.5% 52%, 0 74%, 1% 100%, 99% 94%, 100% 70%, 98.6% 48%, 100% 24%, 99% 0);
+}
+button.nav-tape {
+  padding: 9px 20px 11px;
+  clip-path: polygon(3% 8%, 0 30%, 4% 52%, 0 74%, 3% 100%, 97% 94%, 100% 70%, 96% 48%, 100% 24%, 97% 0);
+}
+
 /* ── About desk ──────────────────────────────────────────────────────── */
 .desk-row {
   scrollbar-width: none;

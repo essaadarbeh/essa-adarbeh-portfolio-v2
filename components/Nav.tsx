@@ -2,14 +2,19 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Mark } from "@/components/hand/Marks";
+import Lenses from "@/components/Lenses";
 import TransitionLink from "@/components/TransitionLink";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
 import PaletteSwitcher from "@/components/PaletteSwitcher";
 
 /**
- * Three floating pills on an ink glass, so they read on every section colour
- * without re-theming. Slides away while scrolling down, returns on the way up.
+ * Taped to the top of the page: the mark as a round sticker, the links
+ * handwritten on a strip of masking tape with a pen squiggle under the section
+ * you're in, and availability as a label-maker strip. Tape and labels read on
+ * paper and on the dark sections alike, and the name sits on its own paper
+ * label, so nothing has to re-theme. Slides away while scrolling down, returns on the way up.
  */
 /** On the home page a plain anchor; elsewhere a transition back home. */
 function NavLink({ href, label, ...rest }: { href: string; label: string } & React.ComponentProps<"a">) {
@@ -34,6 +39,7 @@ export default function Nav() {
     const el = ref.current!;
     let lastY = window.scrollY;
     let hidden = false;
+
     const onScroll = () => {
       const y = window.scrollY;
       const down = y > lastY && y > 160;
@@ -64,25 +70,21 @@ export default function Nav() {
     };
   }, []);
 
-  // Blur only where it's cheap: a backdrop-filter on a fixed bar repaints on
-  // every scroll frame, which phones feel. They get a denser solid instead.
-  const pill = "rounded-full bg-ink/90 text-chalk ring-1 ring-white/10 md:bg-ink/75 md:backdrop-blur-md";
-
   return (
-    <header ref={ref} className="fixed inset-x-0 top-0 z-[100] px-3 pt-3 sm:px-5 sm:pt-5" data-intro-hide>
-      <nav aria-label="Main" className="flex items-center justify-between gap-3">
-        <NavLink
-          href="#top"
-          label="Essa"
-          className={`${pill} flex h-11 items-center gap-2 pl-1.5 pr-4 text-sm font-medium`}
-        >
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-field font-display text-[13px] font-extrabold [--wdth:130]">
-            EA
+    <header ref={ref} className="fixed inset-x-0 top-0 z-[100] px-3 pt-2 sm:px-5 sm:pt-3" data-intro-hide>
+      <nav aria-label="Main" className="flex items-start justify-between gap-3">
+        {/* the sticker */}
+        <NavLink href="#top" label="Essa" className="group flex items-center gap-2.5 pt-1">
+          <span className="grid h-12 w-12 -rotate-[8deg] place-items-center rounded-full bg-[#f7f6f1] shadow-[0_6px_14px_-6px_rgba(0,0,0,0.45)] ring-1 ring-black/5 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:rotate-[6deg] group-hover:scale-105">
+            <Lenses draw className="h-9 w-9" ink="#0b1238" accent="#2b3bff" />
           </span>
-          <span className="hidden sm:inline">{site.name}</span>
+          <span className="hidden -rotate-2 bg-[#f7f6f1] px-2.5 py-1 text-[15px] font-semibold text-ink shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] sm:inline">
+            {site.name}
+          </span>
         </NavLink>
 
-        <ul className={`${pill} hidden h-11 items-center px-1.5 text-sm md:flex`}>
+        {/* the tape */}
+        <ul className="nav-tape mt-2.5 hidden items-center gap-7 md:flex">
           {site.nav.map((n) => {
             const on = active === n.href.slice(1);
             return (
@@ -91,45 +93,52 @@ export default function Nav() {
                   href={n.href}
                   label={n.label}
                   aria-current={on ? "true" : undefined}
-                  className={`relative block rounded-full px-4 py-2 transition-colors duration-300 ${
-                    on ? "bg-chalk text-ink" : "text-chalk/80 hover:text-chalk"
-                  }`}
+                  className="font-hand relative block text-[22px] leading-none text-[#2d2a26] transition-transform duration-300 hover:-rotate-3"
                 >
                   {n.label}
+                  {on && (
+                    <Mark
+                      key={n.href}
+                      now
+                      kind="squiggle"
+                      duration={0.45}
+                      className="absolute -bottom-2 -left-1 h-2.5 w-[calc(100%+8px)] text-field"
+                      width={5}
+                    />
+                  )}
                 </NavLink>
               </li>
             );
           })}
         </ul>
 
-        <div className="ml-auto flex items-center gap-3 md:ml-0">
-          <PaletteSwitcher className={`${pill} hidden h-11 px-1.5 lg:flex`} />
+        <div className="ml-auto flex items-center gap-3 pt-2.5 md:ml-0">
+          <PaletteSwitcher className={`hidden h-11 rounded-full bg-ink/90 px-1.5 text-chalk lg:flex`} />
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls="mobile-menu"
-            className={`${pill} h-11 px-4 text-sm font-medium md:hidden`}
+            className="nav-tape font-hand px-5 text-xl leading-none text-[#2d2a26] md:hidden"
           >
-            {open ? "Close" : "Menu"}
+            {open ? "close" : "menu"}
           </button>
 
           <NavLink
             href="#contact"
             label="Contact"
-            className={`${pill} hidden h-11 sm:flex items-center gap-2.5 px-4 text-sm font-medium`}
+            className="label-tape hidden rotate-2 !text-[13px] transition-transform duration-300 hover:rotate-0 sm:block"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inset-0 animate-ping rounded-full bg-signal opacity-60 motion-reduce:hidden" />
-              <span className="relative h-2 w-2 rounded-full bg-signal" />
-            </span>
-            {site.available ? "Available for work" : "Get in touch"}
+            {site.available ? "AVAILABLE FOR WORK" : "GET IN TOUCH"}
           </NavLink>
         </div>
       </nav>
 
       {open && (
-        <div id="mobile-menu" className="mt-3 rounded-[28px] bg-ink p-3 text-chalk md:hidden">
+        <div
+          id="mobile-menu"
+          className="paper mt-3 rounded-[6px] p-3 text-ink shadow-[0_24px_48px_-20px_rgba(11,18,56,0.5)] md:hidden"
+        >
           <ul>
             {site.nav.map((n) => (
               <li key={n.href}>
@@ -137,15 +146,15 @@ export default function Nav() {
                   href={n.href}
                   label={n.label}
                   onClick={() => setOpen(false)}
-                  className="display block rounded-2xl px-4 py-3 text-5xl uppercase [--wdth:120] active:bg-white/10"
+                  className="display block rounded-2xl px-4 py-3 text-5xl uppercase [--wdth:120] active:bg-ink/5"
                 >
                   {n.label}
                 </NavLink>
               </li>
             ))}
           </ul>
-          <div className={`mt-2 border-t border-chalk/15 px-3 pb-2 pt-4 ${site.features.palettes ? "" : "hidden"}`}>
-            <p className="mb-2 text-sm text-chalk-muted">Palette</p>
+          <div className={`mt-2 border-t border-ink/15 px-3 pb-2 pt-4 ${site.features.palettes ? "" : "hidden"}`}>
+            <p className="mb-2 text-sm text-ink-muted">Palette</p>
             <PaletteSwitcher labelled className="flex-wrap" />
           </div>
         </div>

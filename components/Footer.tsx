@@ -1,3 +1,4 @@
+import Lenses from "@/components/Lenses";
 import { site } from "@/data/site";
 
 export default function Footer() {
@@ -5,7 +6,10 @@ export default function Footer() {
     <footer className="bg-ink px-4 pb-6 pt-16 text-chalk sm:px-6">
       <div className="mx-auto max-w-[1400px]">
         <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-chalk-muted">
-          <p>Drawn by hand, then built by me with Next.js and GSAP.</p>
+          <p className="flex items-center gap-3">
+            <Lenses className="h-8 w-8" ink="var(--color-chalk)" accent="var(--color-signal)" />
+            Drawn by hand, then built by me with Next.js and GSAP.
+          </p>
           <a
             href="#top"
             className="rounded-full px-4 py-2 ring-1 ring-chalk/25 transition-colors hover:bg-chalk hover:text-ink"

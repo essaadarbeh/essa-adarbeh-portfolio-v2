@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { site } from "@/data/site";
+import { lensesSvg } from "@/lib/lenses";
 
 export const alt = `${site.name}, ${site.role}`;
 export const size = { width: 1200, height: 630 };
@@ -10,6 +11,7 @@ export const contentType = "image/png";
 export default async function OpengraphImage() {
   const portrait = await readFile(path.join(process.cwd(), "app", "og-portrait.png"));
   const src = `data:image/png;base64,${portrait.toString("base64")}`;
+  const mark = `data:image/svg+xml;base64,${Buffer.from(lensesSvg("#eef0f6", "#ffc24b")).toString("base64")}`;
 
   return new ImageResponse(
     <div
@@ -26,6 +28,7 @@ export default async function OpengraphImage() {
       <div
         style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 64, width: 780 }}
       >
+        <img src={mark} alt="" width={110} height={110} style={{ marginLeft: -12, marginTop: -20 }} />
         <div
           style={{
             display: "flex",

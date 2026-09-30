@@ -9,6 +9,7 @@ npm run build      # production build
 npm run lint && npm run typecheck
 npm run bake       # regenerate portrait textures (see below)
 node scripts/trace-portrait.mjs   # redraw the portrait sketches
+node scripts/make-icons.mjs       # favicon + home-screen icon from the mark
 node scripts/check-palettes.mjs   # contrast check for every palette
 ```
 
@@ -20,6 +21,10 @@ It deploys to Vercel as-is: import the repo, no settings needed. Once the domain
 - **GSAP 3** with ScrollTrigger and SplitText for scroll-linked and text animation
 - **Lenis** for smooth scrolling on desktop, driven from GSAP's ticker. Touch screens keep native scrolling.
 - **Kalam** for everything written by hand; pen marks are hand-authored SVG paths drawn with stroke-dashoffset (`components/hand/Marks.tsx`)
+
+## The mark
+
+A pair of round glasses (`components/Lenses.tsx`, geometry in `lib/lenses.ts`): the left lens is drawn by hand, the right one is a perfect circle, design and build side by side. It's the nav sticker, the footer mark, the favicon (`app/icon.svg`, on a paper tile so it reads on light and dark tab bars), the home-screen icon (`app/apple-icon.png`) and the share image. `scripts/make-icons.mjs` regenerates the icons from the same geometry.
 
 ## Palettes
 
@@ -48,6 +53,7 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 
 ## Sections
 
+- **Nav.** Taped to the top of the page: the mark as a round sticker (its hand-drawn lens draws itself on load), your name on a paper label, the links handwritten on a strip of masking tape with a pen squiggle under the section you're in, and "Available for work" as a label-maker strip. None of it re-themes: tape and labels read on paper and on the dark sections alike. On phones the menu is a sheet of paper.
 - **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through; on phones a tap swaps sketch and painting. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
 - **About.** Essa again, turned around this time: the back-view painting is drawn and painted the same way as the hero once the desk scrolls into view. Around the figure is a desk of objects you can pick up and move: an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones the desk becomes a row of cards you swipe through.
 - **Work.** The notebook page tears off here (`components/hand/TornEdge.tsx`) and the screens begin. Lumen and Atlas have titles that roll letter by letter on hover (transform-only), and a note scribbled over each cover in the project's own colour. Every project opens its own case study with a page transition in that project's colour.

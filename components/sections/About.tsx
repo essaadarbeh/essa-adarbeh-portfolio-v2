@@ -261,10 +261,10 @@ function Figure() {
         className="h-full w-full"
       />
       <span className="pointer-events-none absolute left-[-2%] top-[4%] flex w-[34%] flex-col items-start md:left-[4%] md:top-[6%] md:w-[26%]">
-        <Written className="-rotate-6 text-xl leading-tight text-ink-muted md:text-2xl" delay={2.6}>
+        <Written className="-rotate-6 text-xl leading-tight text-ink-muted md:text-2xl" delay={1.8}>
           me again, thinking it through
         </Written>
-        <Mark kind="arrow" delay={3.6} duration={0.45} className="ml-8 mt-1 h-10 w-12 text-ink-muted" width={3} />
+        <Mark kind="arrow" delay={2.6} duration={0.45} className="ml-8 mt-1 h-10 w-12 text-ink-muted" width={3} />
       </span>
     </div>
   );

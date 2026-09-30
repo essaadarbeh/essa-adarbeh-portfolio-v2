@@ -535,6 +535,79 @@ html.js [data-draw="on"] .tape-in {
   }
 }
 
+/* the floating "Open in Figma" on case studies */
+.figma-float {
+  transition:
+    translate 0.5s var(--ease-out-expo),
+    opacity 0.3s ease,
+    scale 0.3s ease;
+}
+.figma-float[data-show="false"] {
+  translate: 0 140%;
+  opacity: 0;
+  pointer-events: none;
+}
+.figma-float:hover {
+  scale: 1.05;
+}
+
+/* ── Figma stickers on the hero portrait ──────────────────────────────── */
+.fs-frame {
+  border: 1.5px solid #0d99ff;
+  opacity: 0;
+  scale: 0.97;
+  transition:
+    opacity 0.2s ease,
+    scale 0.35s var(--ease-out-expo);
+}
+.fs[data-on="true"] .fs-frame {
+  opacity: 1;
+  scale: 1;
+}
+.fs-item {
+  opacity: 0;
+  scale: 0.3;
+  rotate: var(--r0, 0deg);
+  transition:
+    opacity 0.18s ease,
+    scale 0.3s ease,
+    rotate 0.3s ease;
+}
+.fs[data-on="true"] .fs-item {
+  opacity: 1;
+  scale: 1;
+  rotate: var(--r, 0deg);
+  /* slapped on one after another, with a little bounce */
+  transition:
+    opacity 0.2s ease calc(var(--i) * 70ms),
+    scale 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) calc(var(--i) * 70ms),
+    rotate 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) calc(var(--i) * 70ms);
+}
+.fs[data-on="true"] .fs-drift-a {
+  animation: fs-drift 3.2s ease-in-out infinite alternate;
+}
+.fs[data-on="true"] .fs-drift-b {
+  animation: fs-drift 2.7s ease-in-out -1s infinite alternate-reverse;
+}
+@keyframes fs-drift {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 10px 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fs-frame,
+  .fs-item,
+  .fs[data-on="true"] .fs-item {
+    transition: opacity 0.15s ease;
+  }
+  .fs[data-on="true"] [class*="fs-drift"] {
+    animation: none;
+  }
+}
+
 /* ── Nav: the strip of masking tape ─────────────────────────────────── */
 .nav-tape {
   padding: 9px 32px 12px;

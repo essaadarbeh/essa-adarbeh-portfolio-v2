@@ -7,6 +7,7 @@ import { DrawScope, Mark, Tape, Written } from "@/components/hand/Marks";
 import TornEdge from "@/components/hand/TornEdge";
 import RollText from "@/components/RollText";
 import TransitionLink from "@/components/TransitionLink";
+import { FigmaButton, FloatingFigma } from "@/components/case/FigmaLink";
 import FlowDiagram from "@/components/case/FlowDiagram";
 import LumenOverview from "@/components/case/LumenOverview";
 import AtlasPanel from "@/components/case/AtlasPanel";
@@ -47,6 +48,8 @@ const PAPER = {
 
 export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
   const root = useRef<HTMLElement>(null);
+  const top = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLElement>(null);
   const i = projects.findIndex((p) => p.slug === slug);
   const p = projects[i];
   const c = cases[slug];
@@ -149,7 +152,19 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
           </div>
 
           <div className="mt-10 grid gap-12 md:grid-cols-12 md:gap-10">
-            <p className="text-2xl leading-snug md:col-span-7 md:text-3xl">{c.lede}</p>
+            <div ref={top} className="md:col-span-7">
+              <p className="text-2xl leading-snug md:text-3xl">{c.lede}</p>
+              {/* the real file, right up front */}
+              <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3">
+                <FigmaButton href={p.href} title={p.title} />
+                <span className="flex items-end gap-1">
+                  <Mark kind="arrowLeft" delay={1.6} duration={0.4} className="-mt-2 h-8 w-11 -scale-y-100" width={3} />
+                  <Written className="rotate-[-3deg] text-xl text-[var(--accent)]" delay={1.9}>
+                    every frame, every layer
+                  </Written>
+                </span>
+              </div>
+            </div>
 
             {/* the project's index card */}
             <div className="relative self-start md:col-span-4 md:col-start-9 md:mt-2">
@@ -377,7 +392,7 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
       </div>
 
       {/* ── a note to finish, signed ─────────────────────────── */}
-      <section aria-labelledby="learned" className="paper text-ink" style={PAPER}>
+      <section ref={end} aria-labelledby="learned" className="paper text-ink" style={PAPER}>
         <DrawScope
           threshold={0.4}
           className="mx-auto grid max-w-[1400px] gap-8 px-4 pb-28 pt-24 sm:px-6 md:grid-cols-12 md:pb-36 md:pt-32"
@@ -390,15 +405,7 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
           <div className="md:col-span-8">
             <p className="text-3xl leading-tight md:text-5xl">{c.learned}</p>
             <div className="mt-10 flex flex-wrap items-end justify-between gap-8">
-              <a
-                href={p.href}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-3 rounded-full bg-ink px-6 py-3.5 font-medium text-chalk transition-transform hover:-rotate-1 hover:scale-[1.03]"
-              >
-                Open the {p.title} file in Figma
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>
+              <FigmaButton href={p.href} title={p.title} />
               <span className="relative block">
                 <Written className="-rotate-3 text-6xl leading-none" delay={0.9}>
                   Essa
@@ -415,6 +422,8 @@ export default function CaseStudy({ slug }: { slug: "lumen" | "atlas" }) {
           </div>
         </DrawScope>
       </section>
+
+      <FloatingFigma href={p.href} title={p.title} after={top} before={end} />
 
       {/* ── next ─────────────────────────────────────────────── */}
       <TransitionLink

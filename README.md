@@ -10,6 +10,7 @@ npm run lint && npm run typecheck
 npm run bake       # regenerate portrait textures (see below)
 node scripts/trace-portrait.mjs   # redraw the portrait sketches
 node scripts/make-icons.mjs       # favicon + home-screen icon from the mark
+node scripts/make-wash.mjs        # the watercolour wash shape the portraits paint with
 node scripts/check-palettes.mjs   # contrast check for every palette
 ```
 
@@ -54,7 +55,7 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
 ## Sections
 
 - **Nav.** Taped to the top of the page: the mark as a round sticker (its hand-drawn lens draws itself on load), your name on a paper label, the links handwritten on a strip of masking tape with a pen squiggle under the section you're in, and "Available for work" as a label-maker strip. None of it re-themes: tape and labels read on paper and on the dark sections alike. On phones the menu is a sheet of paper.
-- **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through; on phones a tap swaps sketch and painting. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
+- **Hero.** A notebook page. The sentence is typeset, then a hand marks it up: the pen circles "design", a highlighter runs under "& build", and a margin note is written with an arrow. Then a pen draws Essa in one continuous line, the pencil sketch fills in along the pen's paths, and paint washes in from the face outward with a ragged watercolour edge (`components/hand/SketchPortrait.tsx`, all SVG). Hovering lifts the paint under the pointer so the sketch shows through, and the portrait turns into a Figma canvas for a moment (`components/hand/FigmaStickers.tsx`): a selection frame snaps around the head, two multiplayer cursors ("Designer" and "Developer") drift in, FigJam-style stickers get slapped on, and a comment pinned on the glasses says "ship it". On phones a tap swaps to the sketch with the stickers on. Scrolling away drains the paint back out. Visitors can also draw on the page with a ballpoint (`components/hand/Doodle.tsx`): strokes thin out when fast and pool when slow.
 - **About.** Essa again, turned around this time: the back-view painting is drawn and painted the same way as the hero once the desk scrolls into view. Around the figure is a desk of objects you can pick up and move: an index-card bio, sticky notes (principles from the old site), a hand-drawn clock showing Amman's actual time, a label-maker strip, and a to-do list whose last item, "your project?", links to Contact. On phones the desk becomes a row of cards you swipe through.
 - **Work.** The notebook page tears off here (`components/hand/TornEdge.tsx`) and the screens begin. Lumen and Atlas have titles that roll letter by letter on hover (transform-only), and a note scribbled over each cover in the project's own colour. Every project opens its own case study with a page transition in that project's colour.
 - **Case studies** (`/work/lumen`, `/work/atlas`) tell the same paper-and-screen story as the home page:
@@ -62,6 +63,7 @@ Five palettes, all taken from Jordan: **Cobalt**, **Petra**, **Dead Sea**, **Wad
   - the page tears into a notebook for the thinking: the brief, the approach as sticky notes, and an interactive user flow (it draws as you scroll, and each step explains itself; Atlas includes the "deny" branch)
   - back on screen for the build: a compare slider (Lumen's wireframe against the final screen, Atlas in dark and light mode, driven by the real token values from Figma), the system in numbers plus a component inventory with every variant, and the live demo
   - a signed note on paper to close, then the next case
+  - the Figma file is one click away throughout: a button next to the intro, a small "Open in Figma" that follows you down the page, and the button again at the end
   - every section heading has a note scribbled beside it, in the project's colour
 - **Process.** Back on paper. The pen circles "design" and underlines "code" in the heading, the same way it marks up the hero. Then comes the design-file compare slider, then a pinned scene where one contact card evolves through the four steps: sticky-note questions, a redlined wireframe, code writing itself, then the finished, working card. The pen circles the step you're on and ticks off the ones behind you.
 - **Toolkit.** A working keyboard with one tool per key, with a note scribbled on it: it plays a short tour by itself until someone takes over. A grouped index below lists every tool at a glance.
@@ -77,7 +79,8 @@ Measured on a phone-sized viewport with the CPU slowed 4×, in headless Chrome (
 Choices that got it there:
 
 - Native scrolling on touch screens.
-- On phones, the portraits skip the SVG masks and displacement filters: the pen still draws the line, then the sketch and the paint fade in as plain images (compositor-only opacity).
+- The watercolour edge is a pre-made image that scales from the face, not an SVG turbulence filter: recomputing the filter over the whole painting every frame held desktop to a few frames a second while the portrait painted, on hover and while scrolling. The eraser is a CSS-masked layer that only moves by transforms, and the Figma stickers are CSS transitions switched by one attribute, so hovering never repaints the portrait.
+- On phones, the portraits skip SVG masks altogether: the pen still draws the line, then the sketch and the paint fade in as plain images (compositor-only opacity).
 - The paper texture is left off the pinned Process scene on phones, where a pinned layer with a tiled background repaints while it scrolls.
 - On phones, no section-wide colour fades and no letter-width animation (both force repaint or re-layout every frame).
 - The compare slider moves by transforms only.

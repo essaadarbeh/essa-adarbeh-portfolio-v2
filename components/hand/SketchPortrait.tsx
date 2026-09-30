@@ -27,16 +27,33 @@ type Props = {
 /**
  * A portrait that is drawn, then painted:
  *   1. a pen draws the silhouette in one continuous line
- *   2. the ink sketch comes in along the pen's contour paths
+ *   2. the pencil sketch comes in under the line
  *   3. paint washes in from the face outward, with a ragged watercolour edge
  * Afterwards the pointer works as an eraser: under it the paint lifts off and
  * the sketch shows through, the design under the build. On touch, a tap
  * swaps between sketch and painting. All SVG, no WebGL.
  *
+ * The watercolour edge is a pre-made image (public/portraits/wash.png, from
+ * scripts/make-wash.mjs) that scales from the face. An SVG turbulence filter
+ * did this before, and recomputing it over the whole painting every frame
+ * held desktop to a few frames a second. The eraser is the same shape as a
+ * CSS mask on its own layer: it slides with transforms and never repaints
+ * the portrait.
+ *
  * Phones get a lighter version of the same thing: the pen still draws the
- * line, then the sketch and the paint fade in as plain images. Masks and
- * displacement filters repaint every frame, which a phone feels.
+ * line, then the sketch and the paint fade in as plain images.
  */
+const WASH = "/portraits/wash.png";
+/** Size a wash blob so it covers a circle of radius r around (cx, cy). */
+const blob = (el: SVGImageElement | null, cx: number, cy: number, r: number) => {
+  if (!el) return;
+  // the blob's ragged edge sits at ~0.9 of its half-size, so pad it out
+  const half = r / 0.82;
+  el.setAttribute("x", String(cx - half));
+  el.setAttribute("y", String(cy - half));
+  el.setAttribute("width", String(half * 2));
+  el.setAttribute("height", String(half * 2));
+};
 const LITE = "(max-width: 767px), (pointer: coarse)";
 export default function SketchPortrait({
   sketch,
@@ -57,9 +74,11 @@ export default function SketchPortrait({
 
   const id = useId().replace(/:/g, "");
   const svg = useRef<SVGSVGElement>(null);
-  const wash = useRef<SVGCircleElement>(null);
-  const eraser = useRef<SVGCircleElement>(null);
-  const inkFill = useRef<SVGRectElement>(null);
+  const wash = useRef<SVGImageElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  const patch = useRef<HTMLDivElement>(null);
+  const patchInner = useRef<HTMLDivElement>(null);
+  const inkLayer = useRef<SVGImageElement>(null);
   const pen = useRef<SVGGElement>(null);
   const inkImg = useRef<HTMLImageElement>(null);
   const colorImg = useRef<HTMLImageElement>(null);
@@ -67,6 +86,7 @@ export default function SketchPortrait({
   const [lite, setLite] = useState<boolean | null>(null);
   useEffect(() => setLite(matchMedia(LITE).matches), []);
   const { width: w, height: h } = sketch;
+  const [fx, fy] = focus;
   const full = Math.hypot(w, h);
 
   // the drawing itself
@@ -74,13 +94,15 @@ export default function SketchPortrait({
     if (!play || lite === null) return;
     const root = svg.current!;
     const outline = [...root.querySelectorAll<SVGPathElement>(".sp-outline")];
-    const brush = root.querySelectorAll<SVGPathElement>(".sp-brush");
+    const paint = { r: 0 };
+    const setWash = () => blob(wash.current, fx, fy, paint.r);
     if (instant || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.set([...outline, ...brush], { strokeDashoffset: 0 });
+      gsap.set(outline, { strokeDashoffset: 0 });
       if (lite) gsap.set([inkImg.current, colorImg.current], { opacity: 1 });
       else {
-        gsap.set(inkFill.current, { opacity: 1 });
-        gsap.set(wash.current, { attr: { r: full } });
+        gsap.set(inkLayer.current, { opacity: 0.9 });
+        paint.r = full;
+        setWash();
       }
       done.current = true;
       return;
@@ -97,29 +119,22 @@ export default function SketchPortrait({
     placePen();
 
     const tl = gsap.timeline({ onComplete: () => void (done.current = true) });
-    tl.to(pen.current, { opacity: 1, duration: 0.25 }, 0)
-      .to(outline, { strokeDashoffset: 0, duration: 2, ease: "power1.inOut" }, 0)
-      .to(tip, { p: 1, duration: 2, ease: "power1.inOut", onUpdate: placePen }, 0)
-      .to(pen.current, { opacity: 0, y: -30, duration: 0.4, ease: "power2.in" }, 2);
-    if (lite)
-      tl.to(inkImg.current, { opacity: 0.9, duration: 0.9, ease: "power1.in" }, 1).to(
-        colorImg.current,
-        { opacity: 1, duration: 1.3, ease: "power2.inOut" },
-        2,
-      );
-    else
-      tl.to(brush, { strokeDashoffset: 0, duration: 0.9, ease: "power1.in", stagger: 0.025 }, 0.7)
-        .to(inkFill.current, { opacity: 1, duration: 0.7 }, 1.7)
-        .to(wash.current, { attr: { r: full }, duration: 2.1, ease: "power2.inOut" }, 1.9);
+    tl.to(pen.current, { opacity: 1, duration: 0.2 }, 0)
+      .to(outline, { strokeDashoffset: 0, duration: 1.5, ease: "power1.inOut" }, 0)
+      .to(tip, { p: 1, duration: 1.5, ease: "power1.inOut", onUpdate: placePen }, 0)
+      .to(pen.current, { opacity: 0, y: -30, duration: 0.35, ease: "power2.in" }, 1.5)
+      .to(lite ? inkImg.current : inkLayer.current, { opacity: 0.9, duration: 0.9, ease: "power1.in" }, 0.5);
+    if (lite) tl.to(colorImg.current, { opacity: 1, duration: 1.1, ease: "power2.inOut" }, 1.4);
+    else tl.to(paint, { r: full, duration: 1.6, ease: "power2.inOut", onUpdate: setWash }, 1.3);
     return () => {
       tl.kill();
     };
-  }, [play, instant, full, lite]);
+  }, [play, instant, full, lite, fx, fy]);
 
   // eraser (fine pointers) and tap-to-swap (touch)
   useEffect(() => {
     if (lite === null) return;
-    const root = svg.current!;
+    const root = (lite ? svg.current : wrap.current) as HTMLElement;
     if (lite) {
       let painted = true;
       const tap = () => {
@@ -131,32 +146,45 @@ export default function SketchPortrait({
       return () => root.removeEventListener("click", tap);
     }
     const fine = matchMedia("(pointer: fine)").matches;
-    const toLocal = (e: PointerEvent) => {
-      const m = root.getScreenCTM();
-      if (!m) return [-999, -999];
-      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
-      return [p.x, p.y];
+    // the eraser: a patch of paper and sketch that slides with the pointer
+    // (outer layer moves, inner layer moves back, so the sketch stays put)
+    const box = { x: 0, y: 0, w: 0, h: 0, e: 0 };
+    const pt = { x: 0, y: 0 };
+    let frame = 0;
+    const draw = () => {
+      frame = 0;
+      const ox = pt.x - box.e / 2,
+        oy = pt.y - box.e / 2;
+      patch.current!.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+      patchInner.current!.style.transform = `translate3d(${-ox}px, ${-oy}px, 0)`;
     };
-    const er = eraser.current!;
-    const size = { r: 0 };
-    const setR = () => er.setAttribute("r", String(size.r));
     const move = (e: PointerEvent) => {
       if (!done.current) return;
-      const [x, y] = toLocal(e);
-      er.setAttribute("cx", String(x));
-      er.setAttribute("cy", String(y));
+      pt.x = e.clientX - box.x;
+      pt.y = e.clientY - box.y;
+      frame ||= requestAnimationFrame(draw);
     };
     const enter = (e: PointerEvent) => {
-      if (!done.current) return;
+      if (!done.current || !wrap.current) return;
+      const r = wrap.current.getBoundingClientRect();
+      Object.assign(box, { x: r.left, y: r.top, w: r.width, h: r.height, e: r.width * 0.63 });
+      Object.assign(patch.current!.style, { width: `${box.e}px`, height: `${box.e}px` });
+      Object.assign(patchInner.current!.style, { width: `${box.w}px`, height: `${box.h}px` });
       move(e);
-      gsap.to(size, { r: w * 0.26, duration: 0.5, ease: "power3.out", onUpdate: setR, overwrite: true });
+      gsap.to(patch.current, { opacity: 1, duration: 0.35, ease: "power2.out", overwrite: true });
     };
-    const leave = () => gsap.to(size, { r: 0, duration: 0.5, ease: "power3.out", onUpdate: setR, overwrite: true });
+    const leave = () => gsap.to(patch.current, { opacity: 0, duration: 0.4, ease: "power2.out", overwrite: true });
     let painted = true;
+    const paint = { r: full };
     const tap = () => {
       if (!done.current) return;
       painted = !painted;
-      gsap.to(wash.current, { attr: { r: painted ? full : 0 }, duration: 1.2, ease: "power2.inOut" });
+      gsap.to(paint, {
+        r: painted ? full : 0,
+        duration: 1.2,
+        ease: "power2.inOut",
+        onUpdate: () => blob(wash.current, fx, fy, paint.r),
+      });
     };
     if (fine) {
       root.addEventListener("pointerenter", enter);
@@ -168,8 +196,9 @@ export default function SketchPortrait({
       root.removeEventListener("pointermove", move);
       root.removeEventListener("pointerleave", leave);
       root.removeEventListener("click", tap);
+      cancelAnimationFrame(frame);
     };
-  }, [w, full, lite]);
+  }, [w, full, lite, fx, fy]);
 
   // leaving the section, the paint drains back out and the sketch stays
   useEffect(() => {
@@ -183,13 +212,13 @@ export default function SketchPortrait({
         end: "bottom top",
         onUpdate: (self) => {
           if (!done.current) return;
-          wash.current?.setAttribute("r", String(full * Math.max(0, 1 - self.progress * 1.5)));
+          blob(wash.current, fx, fy, full * Math.max(0, 1 - self.progress * 1.5));
         },
       });
       return () => st.kill();
     });
     return () => mm.revert();
-  }, [unwashOn, full, lite]);
+  }, [unwashOn, full, lite, fx, fy]);
 
   // the pen's line, and the pen itself: the same on every screen
   const drawing = (
@@ -253,62 +282,46 @@ export default function SketchPortrait({
     );
 
   return (
-    <svg
-      ref={svg}
-      viewBox={`0 0 ${w} ${h}`}
-      preserveAspectRatio="xMidYMax meet"
-      role="img"
-      aria-label={alt}
-      className={`overflow-visible ${className ?? ""}`}
-    >
-      <defs>
-        {/* ragged watercolour edge */}
-        <filter id={`rough-${id}`} x="-30%" y="-30%" width="160%" height="160%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="7" />
-          <feDisplacementMap in="SourceGraphic" scale="80" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-        <filter id={`rough-sm-${id}`} x="-40%" y="-40%" width="180%" height="180%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" />
-          <feDisplacementMap in="SourceGraphic" scale="26" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-        {/* the ink appears along the pen's paths, then everywhere */}
-        <mask id={`ink-${id}`} maskUnits="userSpaceOnUse" x="0" y="0" width={w} height={h}>
-          <g fill="none" stroke="#fff" strokeWidth={w * 0.11} strokeLinecap="round" strokeLinejoin="round">
-            {sketch.paths.map((p, i) => (
-              <path key={i} d={p.d} className="sp-brush" pathLength={1} strokeDasharray="1" strokeDashoffset="1" />
-            ))}
-          </g>
-          <rect ref={inkFill} width={w} height={h} fill="#fff" opacity="0" />
-        </mask>
-        {/* paint: a wash growing from the face */}
-        <mask id={`paint-${id}`} maskUnits="userSpaceOnUse" x={-w} y={-h} width={w * 3} height={h * 3}>
-          <g filter={`url(#rough-${id})`}>
-            <circle ref={wash} cx={focus[0]} cy={focus[1]} r="0" fill="#fff" />
-          </g>
-        </mask>
-        {/* the eraser: a ragged patch where the paint is lifted */}
-        <mask id={`erase-${id}`} maskUnits="userSpaceOnUse" x={-w} y={-h} width={w * 3} height={h * 3}>
-          <g filter={`url(#rough-sm-${id})`}>
-            <circle ref={eraser} cx="-999" cy="-999" r="0" fill="#fff" />
-          </g>
-        </mask>
-      </defs>
-
-      <image
-        href={ink}
-        width={w}
-        height={h}
-        mask={`url(#ink-${id})`}
+    <div ref={wrap} role="img" aria-label={alt} className={`relative ${className ?? ""}`}>
+      <svg
+        ref={svg}
+        viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="xMidYMax meet"
-        opacity="0.9"
-      />
-      <image href={color} width={w} height={h} mask={`url(#paint-${id})`} preserveAspectRatio="xMidYMax meet" />
+        aria-hidden
+        className="absolute inset-0 h-full w-full overflow-visible"
+      >
+        <defs>
+          {/* paint: a watercolour wash growing from the face */}
+          <mask id={`paint-${id}`} maskUnits="userSpaceOnUse" x="0" y="0" width={w} height={h}>
+            <image ref={wash} href={WASH} x={fx} y={fy} width="0" height="0" preserveAspectRatio="none" />
+          </mask>
+        </defs>
+        <image ref={inkLayer} href={ink} width={w} height={h} preserveAspectRatio="xMidYMax meet" opacity="0" />
+        <image href={color} width={w} height={h} mask={`url(#paint-${id})`} preserveAspectRatio="xMidYMax meet" />
+        {drawing}
+      </svg>
+
       {/* under the eraser: bare paper and the sketch again */}
-      <g mask={`url(#erase-${id})`}>
-        <rect width={w} height={h} style={{ fill: "color-mix(in oklab, var(--color-chalk) 93%, var(--color-ink))" }} />
-        <image href={ink} width={w} height={h} preserveAspectRatio="xMidYMax meet" opacity="0.9" />
-      </g>
-      {drawing}
-    </svg>
+      <div
+        ref={patch}
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 overflow-hidden opacity-0 will-change-transform"
+        style={{
+          maskImage: `url(${WASH})`,
+          WebkitMaskImage: `url(${WASH})`,
+          maskSize: "100% 100%",
+          WebkitMaskSize: "100% 100%",
+        }}
+      >
+        <div
+          ref={patchInner}
+          className="absolute left-0 top-0 will-change-transform"
+          style={{ background: "color-mix(in oklab, var(--color-chalk) 93%, var(--color-ink))" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ink} alt="" className="h-full w-full object-contain object-bottom opacity-90" />
+        </div>
+      </div>
+    </div>
   );
 }

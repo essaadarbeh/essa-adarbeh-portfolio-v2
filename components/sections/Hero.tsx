@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Doodle from "@/components/hand/Doodle";
+import FigmaStickers from "@/components/hand/FigmaStickers";
 import { DrawScope, Mark, Written } from "@/components/hand/Marks";
 import SketchPortrait from "@/components/hand/SketchPortrait";
 import heroSketch from "@/data/sketch-hero.json";
@@ -121,19 +122,20 @@ export default function Hero() {
             unwashOn={root}
             className="h-full w-full"
           />
+          <FigmaStickers host={figure} />
 
           {/* what it is, and what to do with it */}
           <div className="pointer-events-none absolute left-[-64%] top-[11%] hidden w-[62%] flex-col items-end md:flex">
-            <Written className="rotate-[3deg] text-right text-2xl leading-tight text-ink-muted" delay={4.2}>
+            <Written className="rotate-[3deg] text-right text-2xl leading-tight text-ink-muted" delay={2.7}>
               that’s me, drawn first
             </Written>
-            <Written className="rotate-[3deg] text-right text-xl text-field" delay={4.7}>
+            <Written className="rotate-[3deg] text-right text-xl text-field" delay={3.1}>
               hover: the sketch is still under the paint
             </Written>
-            <Mark kind="arrow" delay={5.1} duration={0.45} className="mr-1 mt-1 h-12 w-16 text-ink-muted" width={3} />
+            <Mark kind="arrow" delay={3.5} duration={0.45} className="mr-1 mt-1 h-12 w-16 text-ink-muted" width={3} />
           </div>
           <span className="absolute left-[-34%] top-[42%] md:hidden">
-            <Written className="-rotate-6 text-xl text-field" delay={4.2}>
+            <Written className="-rotate-6 text-xl text-field" delay={2.7}>
               tap me
             </Written>
           </span>
@@ -141,7 +143,7 @@ export default function Hero() {
           {/* rubber stamp */}
           <div
             className="stamp absolute bottom-[14%] left-[-60%] z-20 rounded-[10px] border-[3px] border-field px-4 py-2 text-field md:bottom-[9%] md:left-[-68%]"
-            style={{ "--r": "-9deg", "--delay": "4.4s", transform: "rotate(-9deg)" } as React.CSSProperties}
+            style={{ "--r": "-9deg", "--delay": "2.9s", transform: "rotate(-9deg)" } as React.CSSProperties}
           >
             <p className="display text-base uppercase leading-none tracking-wide [--wdth:115] md:text-xl">
               Available for work

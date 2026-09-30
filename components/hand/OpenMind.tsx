@@ -79,6 +79,24 @@ export default function OpenMind({
   const hole = useRef<HTMLDivElement>(null);
   const rim = useRef<SVGSVGElement>(null);
   const train = useRef<SVGPathElement>(null);
+  const tip = useRef<SVGCircleElement>(null);
+  const lidClip = useRef<HTMLDivElement>(null);
+
+  // The shapes are long computed strings; they're only needed once the page
+  // is running, so they're applied here rather than rendered on the server
+  // (where they tripped React's hydration check).
+  useEffect(() => {
+    Object.assign(hole.current!.style, {
+      clipPath: LID,
+      background: `radial-gradient(38% 16% at ${px(MOUTH[0])} ${py(MOUTH[1] + 30)}, #5b68ff 0%, #2433c9 30%, #121a5a 62%, #070b24 100%)`,
+      maskImage: `url(${color})`,
+      webkitMaskImage: `url(${color})`,
+      maskSize: "100% 100%",
+      webkitMaskSize: "100% 100%",
+    });
+    lidClip.current!.style.clipPath = LID;
+    lid.current!.style.transformOrigin = PIVOT;
+  }, [color]);
 
   useEffect(() => {
     const el = host.current;
@@ -103,6 +121,35 @@ export default function OpenMind({
       });
       gsap.set([hole.current, rim.current, lid.current, ...thoughts], { autoAlpha: 0 });
       gsap.set(lid.current, { rotation: 0, x: 0, y: 0 });
+
+      // the pen: draws the line out of the head, easing in and out, with its tip
+      // leading; each thought pops out the moment the tip reaches it
+      const path = train.current!;
+      const L = path.getTotalLength();
+      const pen = { p: 0 };
+      const drawPen = () => {
+        path.style.strokeDashoffset = String(1 - pen.p);
+        const pt = path.getPointAtLength(pen.p * L);
+        tip.current!.setAttribute("cx", String(pt.x));
+        tip.current!.setAttribute("cy", String(pt.y));
+      };
+      drawPen();
+      gsap.set(tip.current, { autoAlpha: 0 });
+      const START = reduced ? 0 : 0.25;
+      const DRAW = reduced ? 0.01 : 1.9;
+      // where along the line each thought sits, and when an eased pen gets there
+      const along = spots.map((sp) => {
+        let best = 0,
+          bd = Infinity;
+        for (let k = 0; k <= 200; k++) {
+          const q = path.getPointAtLength((k / 200) * L);
+          const d = (q.x - sp.x) ** 2 + (q.y - sp.y) ** 2;
+          if (d < bd) ((bd = d), (best = k / 200));
+        }
+        return best;
+      });
+      const at = (f: number) => START + (Math.acos(1 - 2 * f) / Math.PI) * DRAW;
+
       tl = gsap.timeline({ paused: true });
       tl.to([hole.current, rim.current, lid.current], { autoAlpha: 1, duration: 0.01 }, 0)
         .to(
@@ -110,12 +157,9 @@ export default function OpenMind({
           { rotation: 13, x: 6 * unit, y: -40 * unit, duration: reduced ? 0.01 : 0.6, ease: "back.out(1.5)" },
           0.02,
         )
-        .fromTo(
-          train.current,
-          { strokeDashoffset: 1 },
-          { strokeDashoffset: 0, duration: reduced ? 0.01 : 1.6, ease: "none" },
-          0.3,
-        );
+        .to(pen, { p: 1, duration: DRAW, ease: "sine.inOut", onUpdate: drawPen }, START)
+        .to(tip.current, { autoAlpha: 1, duration: 0.15 }, START)
+        .to(tip.current, { autoAlpha: 0, duration: 0.3 }, START + DRAW - 0.1);
       if (tucked.length) tl.to(tucked, { autoAlpha: 0, duration: 0.25 }, 0);
       thoughts.forEach((t, i) => {
         const s = spots[i];
@@ -128,10 +172,10 @@ export default function OpenMind({
             scale: 1,
             rotation: s.r,
             autoAlpha: 1,
-            duration: reduced ? 0.01 : 0.75,
-            ease: "back.out(1.3)",
+            duration: reduced ? 0.01 : 0.6,
+            ease: "back.out(1.4)",
           },
-          reduced ? 0.02 : 0.28 + i * 0.3,
+          reduced ? 0.02 : Math.max(START, at(along[i]) - 0.12),
         );
       });
     };
@@ -174,19 +218,7 @@ export default function OpenMind({
   return (
     <div ref={root} data-open="false" className="om absolute inset-0 z-10 [container-type:inline-size]">
       {/* inside the head, where the lid was: dark, with a light on */}
-      <div
-        ref={hole}
-        aria-hidden
-        className="pointer-events-none invisible absolute inset-0 opacity-0"
-        style={{
-          clipPath: LID,
-          background: `radial-gradient(38% 16% at ${px(MOUTH[0])} ${py(MOUTH[1] + 30)}, #5b68ff 0%, #2433c9 30%, #121a5a 62%, #070b24 100%)`,
-          maskImage: `url(${color})`,
-          WebkitMaskImage: `url(${color})`,
-          maskSize: "100% 100%",
-          WebkitMaskSize: "100% 100%",
-        }}
-      />
+      <div ref={hole} aria-hidden className="pointer-events-none invisible absolute inset-0 opacity-0" />
 
       {/* the opening, drawn in pen, and the train of thought coming out of it */}
       <svg
@@ -214,6 +246,8 @@ export default function OpenMind({
           strokeDashoffset="1"
           pathLength={1}
         />
+        {/* the pen's tip, leading the line */}
+        <circle ref={tip} r="5" fill="var(--color-field)" stroke="#fff" strokeWidth="2.5" opacity="0" />
       </svg>
 
       {/* the lid: the top of the head, hinged at the back */}
@@ -221,9 +255,8 @@ export default function OpenMind({
         ref={lid}
         aria-hidden
         className="pointer-events-none invisible absolute inset-0 opacity-0 drop-shadow-[0_10px_10px_rgba(11,18,56,0.28)]"
-        style={{ transformOrigin: PIVOT }}
       >
-        <div className="absolute inset-0" style={{ clipPath: LID }}>
+        <div ref={lidClip} className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={color} alt="" className="h-full w-full object-contain object-bottom" />
         </div>

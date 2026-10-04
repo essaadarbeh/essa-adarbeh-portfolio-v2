@@ -195,21 +195,23 @@ export default function Contact() {
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const wide = matchMedia("(min-width: 768px) and (pointer: fine)").matches;
         const split = SplitText.create(".contact-title", {
           type: "lines,words,chars",
           charsClass: "char",
           mask: "lines",
         });
+        // Letters rise and widen out from narrow. The widening is a transform
+        // (scaleX), not the font's width axis: animating --wdth re-laid out the
+        // whole headline every frame, which stuttered on the way into Contact.
         gsap.from(split.chars, {
           yPercent: 110,
-          // letters stretching re-lays out text every frame: desktop only
-          ...(wide ? { "--wdth": 50 } : {}),
+          scaleX: 0.55,
+          transformOrigin: "50% 100%",
           ease: "expo.out",
           duration: 1.4,
           stagger: 0.025,
           scrollTrigger: { trigger: ".contact-title", start: "top 80%" },
-          onComplete: () => gsap.set(split.chars, { clearProps: "--wdth" }),
+          onComplete: () => gsap.set(split.chars, { clearProps: "transform" }),
         });
         return () => split.revert();
       });
